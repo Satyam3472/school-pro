@@ -52,10 +52,44 @@ export default function AdmissionForm() {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const handleSubmit = () => {
-    toast.success("Admission submitted successfully")
-    console.log("Admission Form Data", formData)
-  }
+  const handleSubmit = async () => {
+    try {
+      const res = await fetch("/api/admissions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+  
+      const result = await res.json();
+  
+      if (result.success) {
+        toast.success("Admission submitted successfully");
+        console.log("Saved Admission:", result.data);
+        setFormData({
+          studentName: "",
+          dob: "",
+          gender: "",
+          grade: "",
+          parentName: "",
+          phone: "",
+          email: "",
+          address: "",
+          city: "",
+          state: "",
+          admissionDate: "",
+        });
+        setStep(0);
+      } else {
+        toast.error("Failed to submit admission.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong. Please try again.");
+    }
+  };
+  
 
   const nextStep = () => setStep((s) => Math.min(s + 1, steps.length - 1))
   const prevStep = () => setStep((s) => Math.max(s - 1, 0))

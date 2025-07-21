@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Student {
+  id             Int             @id @default(autoincrement())
+  studentName    String
+  dateOfBirth    DateTime
+  gender         String
+  email          String          @unique
+  phone          String
+  address        String
+  admission      Admission?
+  fees           Fee[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model Admission {
+  id             Int             @id @default(autoincrement())
+  student        Student         @relation(fields: [studentId], references: [id])
+  studentId      Int             @unique
+  admissionDate  DateTime
+  classEnrolled  String
+  section        String
+  academicYear   String
+  remarks        String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model Fee {
+  id             Int             @id @default(autoincrement())
+  student        Student         @relation(fields: [studentId], references: [id])
+  studentId      Int
+  amount         Decimal         @db.Decimal(10, 2)
+  dueDate        DateTime
+  paidDate       DateTime?
+  status         FeeStatus       @default(PENDING)
+  remarks        String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model Expense {
+  id             Int             @id @default(autoincrement())
+  title          String
+  description    String?
+  category       String
+  amount         Decimal         @db.Decimal(10, 2)
+  expenseDate    DateTime
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+enum FeeStatus {
+  PAID
+  PENDING
+  PARTIALLY_PAID
+}

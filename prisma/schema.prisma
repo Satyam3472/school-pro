@@ -8,54 +8,56 @@ datasource db {
 }
 
 model Student {
-  id             Int             @id @default(autoincrement())
-  studentName    String
-  dateOfBirth    DateTime
-  gender         String
-  email          String          @unique
-  phone          String
-  address        String
-  admission      Admission?
-  fees           Fee[]
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id          Int        @id @default(autoincrement())
+  studentName String
+  dateOfBirth DateTime
+  gender      String
+  email       String     @unique
+  phone       String
+  address     String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  admission   Admission?
+  fees        Fee[]
 }
 
 model Admission {
-  id             Int             @id @default(autoincrement())
-  student        Student         @relation(fields: [studentId], references: [id])
-  studentId      Int             @unique
-  admissionDate  DateTime
-  classEnrolled  String
-  section        String
-  academicYear   String
-  remarks        String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id            Int      @id @default(autoincrement())
+  studentId     Int      @unique
+  admissionDate DateTime
+  classEnrolled String
+  section       String
+  academicYear  String
+  remarks       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  student       Student  @relation(fields: [studentId], references: [id])
 }
 
 model Fee {
-  id             Int             @id @default(autoincrement())
-  student        Student         @relation(fields: [studentId], references: [id])
-  studentId      Int
-  amount         Decimal         @db.Decimal(10, 2)
-  dueDate        DateTime
-  paidDate       DateTime?
-  status         FeeStatus       @default(PENDING)
-  remarks        String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id        Int       @id @default(autoincrement())
+  studentId Int
+  amount    Decimal   @db.Decimal(10, 2)
+  dueDate   DateTime
+  paidDate  DateTime?
+  status    FeeStatus @default(PENDING)
+  remarks   String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  student   Student   @relation(fields: [studentId], references: [id])
+
+  @@index([studentId], map: "Fee_studentId_fkey")
 }
 
 model Expense {
-  id             Int             @id @default(autoincrement())
-  title          String
-  description    String?
-  category       String
-  amount         Decimal         @db.Decimal(10, 2)
-  expenseDate    DateTime
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  category    String
+  amount      Decimal  @db.Decimal(10, 2)
+  expenseDate DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 enum FeeStatus {

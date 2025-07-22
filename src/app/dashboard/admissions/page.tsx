@@ -37,6 +37,8 @@ export default function AdmissionForm() {
     city: "",
     state: "",
     admissionDate: "",
+    section: "A",
+    academicYear: "2025-2026",
   })
 
   const { setBreadcrumb, setPageTitle } = useDashboardNav();

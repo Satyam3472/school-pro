@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useState, useMemo } from "react"
+import React, { useState, useMemo, useEffect } from "react"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -51,31 +51,65 @@ function exportToCSV(data: any[], filename = "students.csv") {
   URL.revokeObjectURL(url)
 }
 
+type StudentTableRow = {
+  id: number;
+  name: string;
+  grade: string;
+  section: string;
+  roll: number | string;
+  status: string;
+};
+
 export default function AllStudents() {
-  const [students, setStudents] = useState(initialStudents)
+  const [students, setStudents] = useState<StudentTableRow[]>([])
   const [search, setSearch] = useState("")
   const [sortField, setSortField] = useState("name")
   const [sortAsc, setSortAsc] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [modalOpen, setModalOpen] = useState(false)
-  const [editStudent, setEditStudent] = useState(null)
+  const [editStudent, setEditStudent] = useState<StudentTableRow | null>(null)
+
+  // Fetch students from API on mount
+  useEffect(() => {
+    async function fetchStudents() {
+      try {
+        const res = await fetch("/api/students");
+        const result = await res.json();
+        if (result.success) {
+          // Map API data to table format
+          const mapped = result.data.map((s: any) => ({
+            id: s.id,
+            name: s.studentName,
+            grade: s.admission?.classEnrolled || "-",
+            section: s.admission?.section || "-",
+            roll: s.id, // No roll field in schema, using id as fallback
+            status: "Active", // Placeholder, adjust as needed
+          }));
+          setStudents(mapped);
+        }
+      } catch (err) {
+        console.error("Failed to fetch students:", err);
+      }
+    }
+    fetchStudents();
+  }, []);
 
   const itemsPerPage = 5
 
-  const sortedStudents = useMemo(() => {
+  const sortedStudents = useMemo<StudentTableRow[]>(() => {
     return [...students].sort((a, b) => {
-      const aField = a[sortField]?.toString().toLowerCase()
-      const bField = b[sortField]?.toString().toLowerCase()
-      return sortAsc ? aField.localeCompare(bField) : bField.localeCompare(aField)
-    })
-  }, [students, sortField, sortAsc])
+      const aField = a[sortField as keyof StudentTableRow]?.toString().toLowerCase();
+      const bField = b[sortField as keyof StudentTableRow]?.toString().toLowerCase();
+      return sortAsc ? aField.localeCompare(bField) : bField.localeCompare(aField);
+    });
+  }, [students, sortField, sortAsc]);
 
-  const filtered = sortedStudents.filter((student) =>
+  const filtered: StudentTableRow[] = sortedStudents.filter((student) =>
     student.name.toLowerCase().includes(search.toLowerCase())
-  )
+  );
 
-  const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-  const pageCount = Math.ceil(filtered.length / itemsPerPage)
+  const paginated: StudentTableRow[] = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const pageCount = Math.ceil(filtered.length / itemsPerPage);
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -86,7 +120,7 @@ export default function AllStudents() {
     }
   }
 
-  const openModal = (student = null) => {
+  const openModal = (student: StudentTableRow | null = null) => {
     setEditStudent(student)
     setModalOpen(true)
   }
@@ -160,7 +194,7 @@ export default function AllStudents() {
   </TableHeader>
 
   <TableBody>
-    {paginated.map((student) => (
+    {paginated.map((student: StudentTableRow) => (
       <TableRow
         key={student.id}
         className="hover:bg-muted transition-colors duration-200"

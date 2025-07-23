@@ -20,6 +20,8 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { useDashboardNav } from "../layout";
+import { useRouter } from "next/navigation"
+import { Skeleton } from "@/components/ui/skeleton"
 
 const steps = ["Student Info", "Parent Info", "Address & Admission"]
 
@@ -40,7 +42,9 @@ export default function AdmissionForm() {
     section: "A",
     academicYear: "2025-2026",
   })
+  const [loading, setLoading] = useState(false);
 
+  const router = useRouter();
   const { setBreadcrumb, setPageTitle } = useDashboardNav();
   useEffect(() => {
     setBreadcrumb([
@@ -55,6 +59,7 @@ export default function AdmissionForm() {
   }
 
   const handleSubmit = async () => {
+    setLoading(true);
     try {
       const res = await fetch("/api/admissions", {
         method: "POST",
@@ -81,14 +86,19 @@ export default function AdmissionForm() {
           city: "",
           state: "",
           admissionDate: "",
+          section: "A",
+          academicYear: "2025-2026",
         });
         setStep(0);
+        router.push("/dashboard/students");
       } else {
         toast.error("Failed to submit admission.");
       }
     } catch (err) {
       console.error(err);
       toast.error("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
   
@@ -271,16 +281,30 @@ export default function AdmissionForm() {
       </motion.div>
 
       {/* Navigation Buttons */}
-      <div className="flex justify-between pt-4">
-        <Button variant="ghost" onClick={prevStep} disabled={step === 0} className="rounded-full px-6">
+      <div className="flex justify-between pt-4 relative">
+        <Button variant="ghost" onClick={prevStep} disabled={step === 0 || loading} className="rounded-full px-6">
           ⬅ Back
         </Button>
         {step === steps.length - 1 ? (
-          <Button className="bg-primary text-white rounded-full px-6" onClick={handleSubmit}>
-            🎉 Submit Admission
+          <Button className="bg-primary text-white rounded-full px-6 flex items-center justify-center min-w-[180px]" onClick={handleSubmit} disabled={loading}>
+            {loading ? (
+              <>
+                <span className="mr-2">Saving...</span>
+                <Skeleton className="w-5 h-5 inline-block align-middle" />
+              </>
+            ) : (
+              <>🎉 Submit Admission</>
+            )}
           </Button>
         ) : (
-          <Button onClick={nextStep} className="rounded-full px-6">Next ➡</Button>
+          <Button onClick={nextStep} className="rounded-full px-6" disabled={loading}>Next ➡</Button>
+        )}
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/70 z-10 rounded-2xl">
+            <div className="w-full">
+              <Skeleton className="h-12 w-full rounded-2xl" />
+            </div>
+          </div>
         )}
       </div>
     </div>

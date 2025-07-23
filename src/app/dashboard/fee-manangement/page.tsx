@@ -1,5 +1,4 @@
 "use client"
-
 import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,15 +7,30 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
-import { Download, Plus, CheckCircle2, XCircle, AlertCircle, Search } from "lucide-react"
+import { Download, Plus, CheckCircle2, XCircle, AlertCircle, Search, Users } from "lucide-react"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
-import { useDashboardNav } from "../layout";
+import { useDashboardNav } from "../layout"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
-const initialFees = [
-  { id: 1, student: "Aarav Sharma", grade: "5th", amount: 12000, status: "Paid" },
-  { id: 2, student: "Mira Patel", grade: "4th", amount: 11500, status: "Unpaid" },
-  { id: 3, student: "Rohan Verma", grade: "6th", amount: 13000, status: "Partial" },
-]
+type Fee = {
+  id: number;
+  studentId: number;
+  amount: number | string;
+  dueDate: string;
+  paidDate?: string | null;
+  status: string;
+  remarks?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  student?: { studentName: string; grade?: string };
+};
+
+type Student = {
+  id: number;
+  studentName: string;
+  grade?: string;
+};
 
 const statusVariants = {
   Paid: "bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300",
@@ -31,11 +45,13 @@ const statusIcons = {
 }
 
 export default function FeeManagement() {
-  const [fees, setFees] = useState(initialFees)
+  const [fees, setFees] = useState<Fee[]>([])
   const [filter, setFilter] = useState("All")
   const [search, setSearch] = useState("")
-  const [form, setForm] = useState({ student: "", grade: "", amount: "", status: "Paid" })
+  const [form, setForm] = useState({ student: "", grade: "", amount: "", status: "Paid", dueDate: "" })
   const [adding, setAdding] = useState(false)
+  const [students, setStudents] = useState<Student[]>([])
+  const [loading, setLoading] = useState(true)
   const { setBreadcrumb, setPageTitle } = useDashboardNav();
 
   useEffect(() => {
@@ -46,27 +62,76 @@ export default function FeeManagement() {
     setPageTitle("Fee Management");
   }, [setBreadcrumb, setPageTitle]);
 
+  // Fetch students for dropdown
+  useEffect(() => {
+    async function fetchStudents() {
+      try {
+        const res = await fetch("/api/students");
+        const result = await res.json();
+        if (result.success) {
+          setStudents(result.data);
+        } else {
+          showErrorAlert("Failed to fetch students", "Please try again later or contact support.");
+        }
+      } catch (err) {
+        showErrorAlert("Connection error", "Unable to reach the server. Check your connection.");
+      }
+    }
+    fetchStudents();
+  }, []);
+
+  // Fetch fees from API
+  useEffect(() => {
+    async function fetchFees() {
+      setLoading(true)
+      try {
+        const res = await fetch("/api/fee-manangement");
+        const result = await res.json();
+        if (result.success) {
+          setFees(result.data.map((fee: any) => ({
+            ...fee,
+            status: fee.status === "PAID" ? "Paid" : fee.status === "PARTIALLY_PAID" ? "Partial" : "Unpaid",
+            student: fee.student,
+          })));
+          showSuccessAlert("Data loaded", "Fee records updated successfully");
+        } else {
+          showErrorAlert("Data error", result.error || "Failed to fetch fees");
+        }
+      } catch (err) {
+        showErrorAlert("Connection error", "Failed to connect to server");
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchFees();
+  }, []);
+
+  // Set dueDate on client only to avoid hydration mismatch
+  useEffect(() => {
+    setForm(f => ({ ...f, dueDate: new Date().toISOString().split('T')[0] }));
+  }, []);
+
   const filteredFees = fees.filter(fee => {
     const matchesStatus = filter === "All" || fee.status === filter
-    const matchesSearch = fee.student.toLowerCase().includes(search.toLowerCase())
+    const matchesSearch = (fee.student?.studentName?.toLowerCase() || "").includes(search.toLowerCase())
     return matchesStatus && matchesSearch
   })
 
   // Summary calculations
-  const totalCollected = fees.filter(f => f.status === "Paid").reduce((sum, f) => sum + f.amount, 0)
-  const totalPending = fees.filter(f => f.status === "Unpaid").reduce((sum, f) => sum + f.amount, 0)
-  const totalPartial = fees.filter(f => f.status === "Partial").reduce((sum, f) => sum + f.amount, 0)
+  const totalCollected = fees.filter(f => f.status === "Paid").reduce((sum, f) => sum + Number(f.amount), 0)
+  const totalPending = fees.filter(f => f.status === "Unpaid").reduce((sum, f) => sum + Number(f.amount), 0)
+  const totalPartial = fees.filter(f => f.status === "Partial").reduce((sum, f) => sum + Number(f.amount), 0)
   const totalStudents = fees.length
 
   const handleStatusChange = (id: number, newStatus: string) => {
     setFees(prev => prev.map(f => (f.id === id ? { ...f, status: newStatus } : f)))
-    toast.success("Status updated")
+    showSuccessAlert("Status updated", "Fee status changed locally");
   }
 
   const exportToCSV = () => {
     const csv = ["Student,Grade,Amount,Status"]
     filteredFees.forEach(fee => {
-      csv.push(`${fee.student},${fee.grade},${fee.amount},${fee.status}`)
+      csv.push(`${fee.student?.studentName || ""},${fee.student?.grade || ""},${fee.amount},${fee.status}`)
     })
     const blob = new Blob([csv.join("\n")], { type: "text/csv" })
     const url = window.URL.createObjectURL(blob)
@@ -74,27 +139,61 @@ export default function FeeManagement() {
     a.href = url
     a.download = "fee-records.csv"
     a.click()
+    showSuccessAlert("Export successful", "CSV file downloaded");
   }
 
-  const handleAddFee = (e: React.FormEvent) => {
+  const handleAddFee = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.student || !form.grade || !form.amount) {
-      toast.error("Please fill all fields")
+      showErrorAlert("Validation error", "Please fill all required fields");
       return
     }
-    setFees(prev => [
-      ...prev,
-      {
-        id: prev.length ? prev[prev.length - 1].id + 1 : 1,
-        student: form.student,
-        grade: form.grade,
-        amount: Number(form.amount),
-        status: form.status,
-      },
-    ])
-    setForm({ student: "", grade: "", amount: "", status: "Paid" })
-    setAdding(false)
-    toast.success("Record added")
+    try {
+      const res = await fetch("/api/fee-manangement", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          student: form.student,
+          amount: form.amount,
+          dueDate: form.dueDate,
+          status: form.status,
+        })
+      })
+      const result = await res.json()
+      if (result.success) {
+        setFees(prev => [...prev, {
+          ...result.data,
+          status: result.data.status === "PAID" ? "Paid" : result.data.status === "PARTIALLY_PAID" ? "Partial" : "Unpaid",
+        }])
+        setForm({ student: "", grade: "", amount: "", status: "Paid", dueDate: "" })
+        setAdding(false)
+        showSuccessAlert("Success", "Fee record added successfully");
+      } else {
+        showErrorAlert("Error", result.error || "Failed to add fee record");
+      }
+    } catch (err) {
+      showErrorAlert("Connection error", "Failed to connect to server");
+    }
+  }
+
+  const showSuccessAlert = (title: string, description: string) => {
+    toast.custom((t) => (
+      <Alert variant="default" className="w-full">
+        <CheckCircle2 className="h-4 w-4" />
+        <AlertTitle>{title}</AlertTitle>
+        <AlertDescription>{description}</AlertDescription>
+      </Alert>
+    ))
+  }
+
+  const showErrorAlert = (title: string, description: string) => {
+    toast.custom((t) => (
+      <Alert variant="destructive" className="w-full">
+        <XCircle className="h-4 w-4" />
+        <AlertTitle>{title}</AlertTitle>
+        <AlertDescription>{description}</AlertDescription>
+      </Alert>
+    ))
   }
 
   return (
@@ -117,119 +216,119 @@ export default function FeeManagement() {
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="p-3 shadow-none border">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-xs text-muted-foreground">Total Students</p>
-              <p className="text-lg font-medium">{totalStudents}</p>
-            </div>
-            <div className="bg-blue-50 dark:bg-blue-900/30 p-2 rounded-full">
-              <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-3 shadow-none border">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-xs text-muted-foreground">Collected</p>
-              <p className="text-lg font-medium">₹{totalCollected.toLocaleString()}</p>
-            </div>
-            <div className="bg-green-50 dark:bg-green-900/30 p-2 rounded-full">
-              <CheckCircle2 className="w-4 h-4 text-green-500" />
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-3 shadow-none border">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-xs text-muted-foreground">Pending</p>
-              <p className="text-lg font-medium">₹{totalPending.toLocaleString()}</p>
-            </div>
-            <div className="bg-red-50 dark:bg-red-900/30 p-2 rounded-full">
-              <XCircle className="w-4 h-4 text-red-500" />
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-3 shadow-none border">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-xs text-muted-foreground">Partial</p>
-              <p className="text-lg font-medium">₹{totalPartial.toLocaleString()}</p>
-            </div>
-            <div className="bg-amber-50 dark:bg-amber-900/30 p-2 rounded-full">
-              <AlertCircle className="w-4 h-4 text-amber-500" />
-            </div>
-          </div>
-        </Card>
-      </div>
+      {/* Stats Grid - Skeleton Loading */}
+      {loading ? (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-24 rounded-lg" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <StatCard 
+            title="Total Students" 
+            value={totalStudents} 
+            icon={<Users className="w-4 h-4" />}
+            color="text-blue-600"
+            bgColor="bg-blue-50"
+          />
+          <StatCard 
+            title="Collected" 
+            value={`₹${totalCollected.toLocaleString()}`} 
+            icon={<CheckCircle2 className="w-4 h-4" />}
+            color="text-green-600"
+            bgColor="bg-green-50"
+          />
+          <StatCard 
+            title="Pending" 
+            value={`₹${totalPending.toLocaleString()}`} 
+            icon={<XCircle className="w-4 h-4" />}
+            color="text-red-600"
+            bgColor="bg-red-50"
+          />
+          <StatCard 
+            title="Partial" 
+            value={`₹${totalPartial.toLocaleString()}`} 
+            icon={<AlertCircle className="w-4 h-4" />}
+            color="text-amber-600"
+            bgColor="bg-amber-50"
+          />
+        </div>
+      )}
 
       {/* Add Form */}
-      {adding && (
-        <Card className="p-4 shadow-none border">
-          <form onSubmit={handleAddFee} className="space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <div>
-                <Label htmlFor="student" className="text-xs">Student</Label>
-                <Input
-                  id="student"
-                  name="student"
-                  placeholder="Full name"
-                  value={form.student}
-                  onChange={(e) => setForm({...form, student: e.target.value})}
-                  className="h-8 text-sm"
-                />
+      {adding && !loading && (
+        <Card className="shadow-sm border">
+          <CardHeader className="p-4 border-b">
+            <CardTitle className="text-lg">Add New Fee Record</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
+            <form onSubmit={handleAddFee} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="student">Student</Label>
+                  <Select
+                    value={form.student}
+                    onValueChange={value => setForm({ ...form, student: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select student" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {students.map((student) => (
+                        <SelectItem key={student.id} value={student.studentName}>
+                          {student.studentName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="grade">Grade</Label>
+                  <Input
+                    id="grade"
+                    name="grade"
+                    placeholder="Grade"
+                    value={form.grade}
+                    onChange={e => setForm({ ...form, grade: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="amount">Amount (₹)</Label>
+                  <Input
+                    id="amount"
+                    name="amount"
+                    type="number"
+                    placeholder="0.00"
+                    value={form.amount}
+                    onChange={e => setForm({ ...form, amount: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select
+                    value={form.status}
+                    onValueChange={value => setForm({ ...form, status: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Paid">Paid</SelectItem>
+                      <SelectItem value="Unpaid">Unpaid</SelectItem>
+                      <SelectItem value="Partial">Partial</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div>
-                <Label htmlFor="grade" className="text-xs">Grade</Label>
-                <Input
-                  id="grade"
-                  name="grade"
-                  placeholder="e.g. 5th"
-                  value={form.grade}
-                  onChange={(e) => setForm({...form, grade: e.target.value})}
-                  className="h-8 text-sm"
-                />
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" type="button" onClick={() => setAdding(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">Add Fee</Button>
               </div>
-              <div>
-                <Label htmlFor="amount" className="text-xs">Amount</Label>
-                <Input
-                  id="amount"
-                  name="amount"
-                  type="number"
-                  placeholder="₹0.00"
-                  value={form.amount}
-                  onChange={(e) => setForm({...form, amount: e.target.value})}
-                  className="h-8 text-sm"
-                />
-              </div>
-              <div>
-                <Label htmlFor="status" className="text-xs">Status</Label>
-                <Select 
-                  value={form.status} 
-                  onValueChange={(value) => setForm({...form, status: value})}
-                >
-                  <SelectTrigger className="h-8 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Paid">Paid</SelectItem>
-                    <SelectItem value="Unpaid">Unpaid</SelectItem>
-                    <SelectItem value="Partial">Partial</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="flex justify-end">
-              <Button type="submit" size="sm">Add Record</Button>
-            </div>
-          </form>
+            </form>
+          </CardContent>
         </Card>
       )}
 
@@ -261,55 +360,99 @@ export default function FeeManagement() {
         </CardHeader>
         
         <CardContent className="p-0">
-          <Table>
-            <TableHeader className="bg-muted/50">
-              <TableRow>
-                <TableHead className="h-10 px-3 w-[200px]">Student</TableHead>
-                <TableHead className="h-10 px-3">Grade</TableHead>
-                <TableHead className="h-10 px-3">Amount</TableHead>
-                <TableHead className="h-10 px-3">Status</TableHead>
-                <TableHead className="h-10 px-3 text-right">Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredFees.map((fee) => (
-                <TableRow key={fee.id} className="hover:bg-muted/50">
-                  <TableCell className="p-3 font-medium text-sm">{fee.student}</TableCell>
-                  <TableCell className="p-3 text-sm">{fee.grade}</TableCell>
-                  <TableCell className="p-3 text-sm">₹{fee.amount.toLocaleString()}</TableCell>
-                  <TableCell className="p-3">
-                    <div className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs ${statusVariants[fee.status as keyof typeof statusVariants]}`}>
-                      {statusIcons[fee.status as keyof typeof statusIcons]}
-                      {fee.status}
-                    </div>
-                  </TableCell>
-                  <TableCell className="p-3 text-right">
-                    <Select
-                      value={fee.status}
-                      onValueChange={(value) => handleStatusChange(fee.id, value)}
-                    >
-                      <SelectTrigger className="h-8 w-[110px] text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Paid">Paid</SelectItem>
-                        <SelectItem value="Unpaid">Unpaid</SelectItem>
-                        <SelectItem value="Partial">Partial</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                </TableRow>
+          {loading ? (
+            <div className="p-4 space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full rounded-md" />
               ))}
-            </TableBody>
-          </Table>
-          
-          {filteredFees.length === 0 && (
-            <div className="p-6 text-center text-muted-foreground text-sm">
-              No records found
             </div>
+          ) : (
+            <>
+              <Table>
+                <TableHeader className="bg-muted/50">
+                  <TableRow>
+                    <TableHead className="h-10 px-3 w-[200px]">Student</TableHead>
+                    <TableHead className="h-10 px-3">Grade</TableHead>
+                    <TableHead className="h-10 px-3">Amount</TableHead>
+                    <TableHead className="h-10 px-3">Status</TableHead>
+                    <TableHead className="h-10 px-3 text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredFees.length > 0 ? (
+                    filteredFees.map((fee) => (
+                      <TableRow key={fee.id} className="hover:bg-muted/50">
+                        <TableCell className="p-3 font-medium text-sm">{fee.student?.studentName}</TableCell>
+                        <TableCell className="p-3 text-sm">{fee.student?.grade}</TableCell>
+                        <TableCell className="p-3 text-sm">₹{Number(fee.amount).toLocaleString()}</TableCell>
+                        <TableCell className="p-3">
+                          <div className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs ${statusVariants[fee.status as keyof typeof statusVariants]}`}>
+                            {statusIcons[fee.status as keyof typeof statusIcons]}
+                            {fee.status}
+                          </div>
+                        </TableCell>
+                        <TableCell className="p-3">
+                          <Select
+                            value={fee.status}
+                            onValueChange={value => handleStatusChange(fee.id, value)}
+                          >
+                            <SelectTrigger className="w-[100px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Paid">Paid</SelectItem>
+                              <SelectItem value="Unpaid">Unpaid</SelectItem>
+                              <SelectItem value="Partial">Partial</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                        No records found
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+              
+              {filteredFees.length === 0 && (
+                <div className="p-6 text-center text-muted-foreground text-sm">
+                  No records found
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+function StatCard({ title, value, icon, color, bgColor }: {
+  title: string;
+  value: string | number;
+  icon: React.ReactNode;
+  color: string;
+  bgColor: string;
+}) {
+  return (
+    <Card className="p-3 shadow-none border">
+      <CardContent className="p-0">
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <div className={`p-1.5 rounded-md ${bgColor} ${color}`}>
+                {icon}
+              </div>
+              <span className="text-xs text-muted-foreground">{title}</span>
+            </div>
+            <p className="text-lg font-semibold">{value}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   )
 }

@@ -55,6 +55,7 @@ const data = {
         items: [
           { title: "Fee Management", url: "/dashboard/fee-manangement" },
           { title: "Expenses", url: "/dashboard/expenses" },
+          // { title: "Salary Management", url: "/dashboard/salary-management" },
         ],
       },
   ],

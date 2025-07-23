@@ -25,15 +25,6 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import { Plus, Pencil, Trash, ChevronDown, ChevronUp, FileDown } from "lucide-react"
 
-const initialStudents = [
-  { id: 1, name: "Aryan Mehta", grade: "5", section: "A", roll: "501", status: "Active" },
-  { id: 2, name: "Priya Sharma", grade: "6", section: "B", roll: "602", status: "Active" },
-  { id: 3, name: "Rohan Das", grade: "5", section: "C", roll: "503", status: "Inactive" },
-  { id: 4, name: "Neha Verma", grade: "7", section: "A", roll: "701", status: "Active" },
-  { id: 5, name: "Kunal Singh", grade: "6", section: "C", roll: "604", status: "Active" },
-  { id: 6, name: "Sara Khan", grade: "8", section: "B", roll: "802", status: "Inactive" },
-]
-
 function exportToCSV(data: any[], filename = "students.csv") {
   const csvRows = [
     ["Roll No", "Name", "Grade", "Section", "Status"],
@@ -161,7 +152,7 @@ export default function AllStudents() {
             <FileDown className="w-4 h-4 mr-2" /> Export CSV
           </Button>
           <Button onClick={() => openModal()} className="gap-2">
-            <Plus className="w-4 h-4" /> Add Student
+            <Plus className="w-4 h-4" /> New Admission
           </Button>
         </div>
       </div>

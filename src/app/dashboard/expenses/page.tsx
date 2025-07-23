@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { Download, Plus, CheckCircle2, XCircle, AlertCircle, Search, Upload } from "lucide-react"
+import { Download, Plus, CheckCircle2, XCircle, AlertCircle, Search, Upload, CircleX, CrossIcon } from "lucide-react"
 import { toast } from "sonner"
 import {
   Breadcrumb,
@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useDashboardNav } from "../layout";
 import { Skeleton } from "@/components/ui/skeleton"
 import { IoAddCircle } from "react-icons/io5"
+import { showErrorAlert, showSuccessAlert } from "@/utils/customFunction"
 
 const statusConfig = {
   Paid: {
@@ -123,10 +124,10 @@ export default function Expenses() {
             status: "Paid" // Default, since Expense model has no status field
           })));
         } else {
-          toast.error("Failed to fetch expenses");
+          showErrorAlert("Error","Failed to fetch expenses");
         }
       } catch (err) {
-        toast.error("Error loading expenses");
+        showErrorAlert("Error","Error loading expenses");
       } finally {
         setLoading(false)
       }
@@ -151,7 +152,7 @@ export default function Expenses() {
 
   const handleStatusChange = (id: number, newStatus: string) => {
     setExpenses(prev => prev.map(e => (e.id === id ? { ...e, status: newStatus } : e)))
-    toast.success("Status updated locally (not saved to DB)")
+    showSuccessAlert("Success","Status updated locally (not saved to DB)")
   }
 
   const exportToCSV = () => {
@@ -175,9 +176,10 @@ export default function Expenses() {
   const handleAddExpense = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.category || !form.description || !form.amount) {
-      toast.error("Please fill all required fields")
+      showErrorAlert("Error","Please fill all required fields")
       return
     }
+
     try {
       const res = await fetch("/api/expenses", {
         method: "POST",
@@ -202,12 +204,12 @@ export default function Expenses() {
           title: ""
         })
         setAdding(false)
-        toast.success("Expense added successfully")
+        showSuccessAlert("Success","Expense added successfully")
       } else {
         toast.error(result.error || "Failed to add expense")
       }
     } catch (err) {
-      toast.error("Error adding expense")
+      showErrorAlert("Error","Error adding expense")
     }
   }
 
@@ -226,7 +228,7 @@ export default function Expenses() {
               Export
             </Button>
             <Button size="sm" onClick={() => setAdding(!adding)} className="gap-2">
-              <Plus className="w-4 h-4" />
+            {adding ? <CircleX className="w-3.5 h-3.5" /> : <CrossIcon className="w-3.5 h-3.5" />}
               {adding ? "Cancel" : "Add Expense"}
             </Button>
           </div>

@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { toast } from "sonner"
 import { motion } from "framer-motion"
 import {
   Breadcrumb,
@@ -22,6 +21,7 @@ import {
 import { useDashboardNav } from "../layout";
 import { useRouter } from "next/navigation"
 import { Skeleton } from "@/components/ui/skeleton"
+import { showErrorAlert, showSuccessAlert } from "@/utils/customFunction"
 
 const steps = ["Student Info", "Parent Info", "Address & Admission"]
 
@@ -72,7 +72,7 @@ export default function AdmissionForm() {
       const result = await res.json();
   
       if (result.success) {
-        toast.success("Admission submitted successfully");
+        showSuccessAlert("Success", "Admission submitted successfully");
         console.log("Saved Admission:", result.data);
         setFormData({
           studentName: "",
@@ -92,11 +92,11 @@ export default function AdmissionForm() {
         setStep(0);
         router.push("/dashboard/students");
       } else {
-        toast.error("Failed to submit admission.");
+        showErrorAlert("ERROR","Failed to submit admission.");
       }
     } catch (err) {
       console.error(err);
-      toast.error("Something went wrong. Please try again.");
+      showErrorAlert("ERROR","Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }

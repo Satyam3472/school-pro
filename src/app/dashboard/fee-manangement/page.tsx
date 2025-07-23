@@ -7,11 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
-import { Download, Plus, CheckCircle2, XCircle, AlertCircle, Search, Users } from "lucide-react"
+import { Download, Plus, CheckCircle2, XCircle, AlertCircle, Search, Users, CrossIcon, CircleX } from "lucide-react"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { useDashboardNav } from "../layout"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { IoAddCircle } from "react-icons/io5"
+import { FaCross } from "react-icons/fa6"
+import { showErrorAlert, showSuccessAlert } from "@/utils/customFunction"
 
 type Fee = {
   id: number;
@@ -176,26 +179,6 @@ export default function FeeManagement() {
     }
   }
 
-  const showSuccessAlert = (title: string, description: string) => {
-    toast.custom((t) => (
-      <Alert variant="default" className="w-full">
-        <CheckCircle2 className="h-4 w-4" />
-        <AlertTitle>{title}</AlertTitle>
-        <AlertDescription>{description}</AlertDescription>
-      </Alert>
-    ))
-  }
-
-  const showErrorAlert = (title: string, description: string) => {
-    toast.custom((t) => (
-      <Alert variant="destructive" className="w-full">
-        <XCircle className="h-4 w-4" />
-        <AlertTitle>{title}</AlertTitle>
-        <AlertDescription>{description}</AlertDescription>
-      </Alert>
-    ))
-  }
-
   return (
     <div className="max-w-7xl mx-auto p-4 space-y-4">
       {/* Header */}
@@ -210,7 +193,7 @@ export default function FeeManagement() {
             <span>Export</span>
           </Button>
           <Button size="sm" onClick={() => setAdding(v => !v)} className="gap-1.5">
-            <Plus className="w-3.5 h-3.5" />
+            {adding ? <CircleX className="w-3.5 h-3.5" /> : <CrossIcon className="w-3.5 h-3.5" />}
             <span>{adding ? "Cancel" : "Add"}</span>
           </Button>
         </div>
@@ -258,82 +241,98 @@ export default function FeeManagement() {
 
       {/* Add Form */}
       {adding && !loading && (
-        <Card className="shadow-sm border">
-          <CardHeader className="p-4 border-b">
-            <CardTitle className="text-lg">Add New Fee Record</CardTitle>
+        <Card className="shadow-lg py-0 border border-gray-200 rounded-xl bg-white">
+          <CardHeader className="px-6 pt-4 border-b border-gray-100 bg-gray-50 rounded-t-xl">
+            <CardTitle className="text-2xl font-semibold text-gray-800 flex items-center gap-2">
+              🧾 Add New Fee Record
+            </CardTitle>
           </CardHeader>
-          <CardContent className="p-4">
-            <form onSubmit={handleAddFee} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+
+          <CardContent className="px-6 pb-6">
+            <form onSubmit={handleAddFee} className="space-y-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-6">
+                {/* Student */}
                 <div className="space-y-2">
                   <Label htmlFor="student">Student</Label>
                   <Select
                     value={form.student}
-                    onValueChange={value => setForm({ ...form, student: value })}
+                    onValueChange={(value) => setForm({ ...form, student: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select student" />
                     </SelectTrigger>
                     <SelectContent>
                       {students.map((student) => (
                         <SelectItem key={student.id} value={student.studentName}>
-                          {student.studentName}
+                          👤 {student.studentName}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Grade */}
                 <div className="space-y-2">
                   <Label htmlFor="grade">Grade</Label>
                   <Input
                     id="grade"
                     name="grade"
-                    placeholder="Grade"
+                    placeholder="e.g. 7th"
                     value={form.grade}
-                    onChange={e => setForm({ ...form, grade: e.target.value })}
+                    onChange={(e) => setForm({ ...form, grade: e.target.value })}
                   />
                 </div>
+
+                {/* Amount */}
                 <div className="space-y-2">
                   <Label htmlFor="amount">Amount (₹)</Label>
                   <Input
                     id="amount"
                     name="amount"
                     type="number"
-                    placeholder="0.00"
+                    placeholder="Enter fee amount"
                     value={form.amount}
-                    onChange={e => setForm({ ...form, amount: e.target.value })}
+                    onChange={(e) => setForm({ ...form, amount: e.target.value })}
                   />
                 </div>
+
+                {/* Status */}
                 <div className="space-y-2">
                   <Label htmlFor="status">Status</Label>
                   <Select
                     value={form.status}
-                    onValueChange={value => setForm({ ...form, status: value })}
+                    onValueChange={(value) => setForm({ ...form, status: value })}
                   >
-                    <SelectTrigger>
-                      <SelectValue />
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Paid">Paid</SelectItem>
-                      <SelectItem value="Unpaid">Unpaid</SelectItem>
-                      <SelectItem value="Partial">Partial</SelectItem>
+                      <SelectItem value="Paid">✅ Paid</SelectItem>
+                      <SelectItem value="Unpaid">❌ Unpaid</SelectItem>
+                      <SelectItem value="Partial">➗ Partial</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" type="button" onClick={() => setAdding(false)}>
-                  Cancel
+                <div className="flex justify-center items-center gap-3 pt-2">
+                <Button
+                  type="submit"
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md transition"
+                >
+                  <IoAddCircle className="text-xl"/> Add Fee
                 </Button>
-                <Button type="submit">Add Fee</Button>
               </div>
+              </div>
+
+              {/* Buttons */}
+
             </form>
           </CardContent>
         </Card>
+
       )}
 
       {/* Main Table Card */}
-      <Card className="shadow-none border">
+      <Card className="shadow-none border p-2 gap-0">
         <CardHeader className="p-3 border-b">
           <div className="flex flex-col sm:flex-row justify-between gap-3">
             <div className="relative w-full sm:w-64">
@@ -350,7 +349,7 @@ export default function FeeManagement() {
                 <SelectValue placeholder="Filter status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="All">All Statuses</SelectItem>
+                <SelectItem value="All">All Status</SelectItem>
                 <SelectItem value="Paid">Paid</SelectItem>
                 <SelectItem value="Unpaid">Unpaid</SelectItem>
                 <SelectItem value="Partial">Partial</SelectItem>

@@ -23,6 +23,7 @@ import {
   ChartLegendContent,
 } from "@/components/ui/chart";
 import { Line, LineChart, Bar, BarChart, PieChart as RechartsPieChart, Pie, Cell, Area, AreaChart } from "recharts";
+import AdmissionForm from "./admissions/page";
 
 // Dummy data for charts
 const monthlyData = [
@@ -96,8 +97,8 @@ export default function Dashboard() {
     <div className="flex flex-1 flex-col gap-6 p-6">
       {/* Header Stats - Compact Row */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="shadow-sm">
-          <CardContent className="p-4">
+        <Card className="shadow-sm py-2">
+          <CardContent className="px-4 py-2">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Total Students</p>
@@ -114,8 +115,8 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm">
-          <CardContent className="p-4">
+        <Card className="shadow-sm py-2">
+          <CardContent className="px-4 py-2">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Today's Attendance</p>
@@ -132,8 +133,8 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm">
-          <CardContent className="p-4">
+        <Card className="shadow-sm py-2">
+          <CardContent className="px-4 py-2">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Monthly Income</p>
@@ -150,8 +151,8 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm">
-          <CardContent className="p-4">
+        <Card className="shadow-sm py-2">
+          <CardContent className="px-4 py-2">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Monthly Expense</p>
@@ -172,7 +173,7 @@ export default function Dashboard() {
       {/* Main Charts Grid */}
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Financial Trend - Takes 2 columns */}
-        <Card className="lg:col-span-2 shadow-sm">
+        {/* <Card className="lg:col-span-2 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <Activity className="w-5 h-5 text-blue-600" />
@@ -210,6 +211,11 @@ export default function Dashboard() {
                 <ChartTooltip content={<ChartTooltipContent />} />
               </AreaChart>
             </ChartContainer>
+          </CardContent>
+        </Card> */}
+        <Card className="lg:col-span-2 shadow-sm  py-0">
+          <CardContent>
+            <AdmissionForm />
           </CardContent>
         </Card>
 

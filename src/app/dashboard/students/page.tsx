@@ -121,11 +121,11 @@ export default function AllStudents() {
     const form = e.target as HTMLFormElement
     const newStudent = {
       id: editStudent ? editStudent.id : Date.now(),
-      name: form.name.value,
-      grade: form.grade.value,
-      section: form.section.value,
-      roll: form.roll.value,
-      status: form.status.value,
+      name: (form.elements.namedItem('name') as HTMLInputElement)?.value,
+      grade: (form.elements.namedItem('grade') as HTMLInputElement)?.value,
+      section: (form.elements.namedItem('section') as HTMLInputElement)?.value,
+      roll: (form.elements.namedItem('roll') as HTMLInputElement)?.value,
+      status: (form.elements.namedItem('status') as HTMLInputElement)?.value,
     }
     setStudents((prev) => {
       if (editStudent) {

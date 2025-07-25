@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/sidebar"
 import Image from "next/image"
 import { NavUser } from "./nav-user"
+import { Button } from "./ui/button"
+import { useRouter } from "next/navigation"
 
 const data = {
   user: {
@@ -62,6 +64,7 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const router = useRouter();
   return (
     <Sidebar variant="floating" {...props}>
       <SidebarHeader>
@@ -119,6 +122,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => router.push('/dashboard/settings')}>
+              <Settings className="w-3.5 h-3.5" />
+              <span>Settings</span>
+        </Button>
         <NavUser user={data.user} />
       </SidebarFooter>
     </Sidebar>

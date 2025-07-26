@@ -3,18 +3,62 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    // Fetch all students with their admission info
     const students = await prisma.student.findMany({
       include: {
         admission: true,
       },
-      orderBy: {
-        createdAt: "desc",
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: students,
+    });
+  } catch (error) {
+    console.error("Error fetching students:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to fetch students" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    const body = await request.json();
+    const { id, studentName, fatherName, motherName, gender, address, aadhaarNumber, studentPhotoBase64 } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: "Student ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const updatedStudent = await prisma.student.update({
+      where: { id: parseInt(id) },
+      data: {
+        studentName,
+        fatherName,
+        motherName,
+        gender,
+        address,
+        aadhaarNumber,
+        studentPhotoBase64,
+      },
+      include: {
+        admission: true,
       },
     });
-    return NextResponse.json({ success: true, data: students });
+
+    return NextResponse.json({
+      success: true,
+      data: updatedStudent,
+    });
   } catch (error) {
-    console.error("Failed to fetch students:", error);
-    return NextResponse.json({ success: false, error: "Failed to fetch students." }, { status: 500 });
+    console.error("Error updating student:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to update student" },
+      { status: 500 }
+    );
   }
 } 

@@ -6,10 +6,10 @@ export function NavUser({ user }: { user: { name: string; email: string; avatar:
           src={user.avatar}
           alt={user.name}
           className="w-10 h-10 rounded-full object-cover border"
-          onError={(e) => {
-            console.error('Admin image failed to load:', e);
-            e.currentTarget.src = "/avatars/principal.jpg";
-          }}
+          // onError={(e) => {
+          //   console.error('Admin image failed to load:', e);
+          //   e.currentTarget.src = "/avatars/principal.jpg";
+          // }}
         />
         <div>
           <div className="font-semibold leading-tight">{user.name}</div>

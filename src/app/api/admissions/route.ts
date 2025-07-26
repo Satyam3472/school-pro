@@ -39,6 +39,10 @@ export async function POST(req: Request) {
       email: rawBody.email,
       phone: rawBody.phone,
       address: rawBody.address,
+      fatherName: rawBody.fatherName,
+      motherName: rawBody.motherName,
+      aadhaarNumber: rawBody.aadhaarNumber,
+      studentPhotoBase64: rawBody.studentPhotoBase64,
       admissionDate: rawBody.admissionDate,
       classEnrolled: rawBody.classEnrolled || rawBody.grade, // Accept both
       section: rawBody.section || "", // Default to empty string if not provided
@@ -73,6 +77,10 @@ export async function POST(req: Request) {
         email: body.email,
         phone: body.phone,
         address: body.address,
+        fatherName: body.fatherName,
+        motherName: body.motherName,
+        aadhaarNumber: body.aadhaarNumber,
+        studentPhotoBase64: body.studentPhotoBase64,
       },
     });
 

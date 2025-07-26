@@ -28,7 +28,7 @@ export default function SettingsPage() {
   useEffect(() => {
     setBreadcrumb([
       { label: 'Dashboard', href: '/dashboard' },
-      { label: 'Settings' },
+      { label: 'Settings'},
     ]);
     setPageTitle('Settings');
   }, [setBreadcrumb, setPageTitle]);

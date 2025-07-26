@@ -74,7 +74,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   )}
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-bold text-lg">{data.schoolName}</span>
+                  <span className="font-bold text-lg">{data.schoolName?.toUpperCase()}</span>
                   <span className="text-xs text-muted-foreground">
                     {data.slogan}
                   </span>

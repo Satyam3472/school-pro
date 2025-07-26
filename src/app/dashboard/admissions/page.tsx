@@ -32,7 +32,10 @@ export default function AdmissionForm() {
     dob: "",
     gender: "",
     grade: "",
-    parentName: "",
+    aadhaarNumber: "",
+    studentPhotoBase64: "",
+    fatherName: "",
+    motherName: "",
     phone: "",
     email: "",
     address: "",
@@ -58,6 +61,17 @@ export default function AdmissionForm() {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormData(prev => ({ ...prev, studentPhotoBase64: reader.result as string }));
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSubmit = async () => {
     setLoading(true);
     try {
@@ -79,7 +93,10 @@ export default function AdmissionForm() {
           dob: "",
           gender: "",
           grade: "",
-          parentName: "",
+          aadhaarNumber: "",
+          studentPhotoBase64: "",
+          fatherName: "",
+          motherName: "",
           phone: "",
           email: "",
           address: "",
@@ -148,8 +165,8 @@ export default function AdmissionForm() {
           </CardHeader>
           <CardContent className="space-y-6 p-6">
             {step === 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="md:col-span-2">
                   <Label className="text-sm">Full Name</Label>
                   <Input
                     placeholder="Enter student's full name"
@@ -159,7 +176,7 @@ export default function AdmissionForm() {
                     className="text-sm"
                   />
                 </div>
-                <div>
+                <div className="md:col-span-2">
                   <Label className="text-sm">Date of Birth</Label>
                   <Input
                     type="date"
@@ -169,7 +186,7 @@ export default function AdmissionForm() {
                     className="text-sm"
                   />
                 </div>
-                <div>
+                <div className="md:col-span-1">
                   <Label className="text-sm">Gender</Label>
                   <Select value={formData.gender} onValueChange={(v) => handleChange("gender", v)}>
                     <SelectTrigger className="text-sm">
@@ -182,27 +199,104 @@ export default function AdmissionForm() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
+                <div className="md:col-span-1">
                   <Label className="text-sm">Grade Applying For</Label>
+                  <Select value={formData.grade} onValueChange={(v) => handleChange("grade", v)}>
+                    <SelectTrigger className="text-sm w-[80%]">
+                      <SelectValue placeholder="Select Class" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Nursery">Nursery</SelectItem>
+                      <SelectItem value="LKG">LKG</SelectItem>
+                      <SelectItem value="UKG">UKG</SelectItem>
+                      <SelectItem value="Class 1">Class 1</SelectItem>
+                      <SelectItem value="Class 2">Class 2</SelectItem>
+                      <SelectItem value="Class 3">Class 3</SelectItem>
+                      <SelectItem value="Class 4">Class 4</SelectItem>
+                      <SelectItem value="Class 5">Class 5</SelectItem>
+                      <SelectItem value="Class 6">Class 6</SelectItem>
+                      <SelectItem value="Class 7">Class 7</SelectItem>
+                      <SelectItem value="Class 8">Class 8</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="md:col-span-2">
+                  <Label className="text-sm">Aadhaar Number</Label>
                   <Input
-                    placeholder="Eg. 5th"
-                    value={formData.grade}
-                    onChange={(e) => handleChange("grade", e.target.value)}
-                    required
+                    placeholder="12-digit Aadhaar number"
+                    value={formData.aadhaarNumber}
+                    onChange={(e) => handleChange("aadhaarNumber", e.target.value)}
+                    maxLength={12}
                     className="text-sm"
                   />
                 </div>
+                <div className="relative space-y-2 md:col-span-4 flex flex-col gap-2 justify-start items-start"> 
+                  <div className="flex gap-2 items-center justify-start">
+                  <Label htmlFor="studentPhoto" className="text-sm">Student Photo</Label>
+                  <div className="flex items-center gap-4"> 
+                    <Input
+                      id="studentPhoto"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden" 
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => document.getElementById('studentPhoto')?.click()} 
+                      className="h-10 px-4 py-2" 
+                    >
+                      Upload Photo
+                    </Button>
+                  </div>
+                    <p className="text-xs text-muted-foreground">
+                      Recommended size: <span className="font-medium">200x200 pixels</span>
+                    </p>
+                  </div>
+                {formData.studentPhotoBase64 && (
+                  <div className="mt-2 flex items-center gap-4 p-3 border rounded-md bg-muted/20"> {/* Enhanced preview container */}
+                    <img
+                      src={formData.studentPhotoBase64}
+                      alt="Student Photo Preview"
+                      className="w-20 h-20 object-cover border border-gray-300 rounded-md shadow-sm" // Slightly larger, more styled preview
+                    />
+                    <div className="flex flex-col space-y-1">
+                      <span className="text-sm font-medium">Photo Selected</span>
+                      <Button
+                        type="button"
+                        variant="destructive" 
+                        size="sm"
+                        onClick={() => setFormData(prev => ({ ...prev, studentPhotoBase64: '' }))}
+                        className="w-fit"
+                      >
+                        Remove Photo
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
               </div>
             )}
 
             {step === 1 && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm">Parent/Guardian Name</Label>
+                  <Label className="text-sm">Father's Name</Label>
                   <Input
-                    placeholder="Enter parent name"
-                    value={formData.parentName}
-                    onChange={(e) => handleChange("parentName", e.target.value)}
+                    placeholder="Enter father's name"
+                    value={formData.fatherName}
+                    onChange={(e) => handleChange("fatherName", e.target.value)}
+                    required
+                    className="text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm">Mother's Name</Label>
+                  <Input
+                    placeholder="Enter mother's name"
+                    value={formData.motherName}
+                    onChange={(e) => handleChange("motherName", e.target.value)}
                     required
                     className="text-sm"
                   />
@@ -218,7 +312,7 @@ export default function AdmissionForm() {
                     className="text-sm"
                   />
                 </div>
-                <div className="md:col-span-2">
+                <div>
                   <Label className="text-sm">Email Address</Label>
                   <Input
                     type="email"
@@ -233,8 +327,8 @@ export default function AdmissionForm() {
             )}
 
             {step === 2 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-3">
                   <Label className="text-sm">Address</Label>
                   <Input
                     placeholder="House No, Street, Area"
@@ -264,7 +358,7 @@ export default function AdmissionForm() {
                     className="text-sm"
                   />
                 </div>
-                <div className="md:col-span-2">
+                <div>
                   <Label className="text-sm">Admission Date</Label>
                   <Input
                     type="date"

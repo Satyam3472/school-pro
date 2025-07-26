@@ -16,6 +16,10 @@ model Student {
   email       String     @unique
   phone       String
   address     String
+  fatherName  String?
+  motherName  String?
+  aadhaarNumber String?
+  studentPhotoBase64 String? @db.LongText
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   admission   Admission?

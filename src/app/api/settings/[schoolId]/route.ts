@@ -1,0 +1,134 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+
+export async function GET(req: Request, { params }: { params: { schoolId: string } }) {
+  const { schoolId } = params;
+
+  try {
+    const setting = await prisma.setting.findUnique({
+      where: { schoolId },
+      include: { classes: true }
+    });
+
+    if (!setting) {
+      return NextResponse.json({ error: "School not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(setting);
+  } catch (error) {
+    console.error("API Error:", error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
+}
+
+export async function PUT(req: Request, { params }: { params: { schoolId: string } }) {
+  const { schoolId } = params;
+
+  try {
+    const data = await req.json();
+
+    const {
+      schoolName,
+      slogan,
+      adminName,
+      adminEmail,
+      password,
+      logoBase64,
+      adminImageBase64,
+      classes
+    } = data;
+
+    // Check if settings exist for this school
+    const existingSetting = await prisma.setting.findUnique({
+      where: { schoolId },
+      include: { classes: true }
+    });
+
+    if (!existingSetting) {
+      return NextResponse.json({ 
+        success: false, 
+        error: "School settings not found. Please create settings first." 
+      }, { status: 404 });
+    }
+
+    // Delete existing classes first
+    await prisma.class.deleteMany({
+      where: { settingId: existingSetting.id }
+    });
+
+    // Update the setting
+    const updatedSetting = await prisma.setting.update({
+      where: { schoolId },
+      data: {
+        schoolName,
+        slogan,
+        adminName,
+        adminEmail,
+        password,
+        logoBase64,
+        adminImageBase64,
+        classes: {
+          create: classes.map((cls: any) => ({
+            name: cls.name,
+            tuitionFee: parseFloat(cls.tuitionFee),
+            admissionFee: parseFloat(cls.admissionFee)
+          }))
+        }
+      },
+      include: { classes: true }
+    });
+
+    return NextResponse.json({ 
+      success: true, 
+      message: "Settings updated successfully",
+      data: updatedSetting 
+    });
+
+  } catch (error) {
+    console.error("Update API Error:", error);
+    return NextResponse.json({ 
+      success: false, 
+      error: "Failed to update settings" 
+    }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request, { params }: { params: { schoolId: string } }) {
+  const { schoolId } = params;
+
+  try {
+    // Check if settings exist
+    const existingSetting = await prisma.setting.findUnique({
+      where: { schoolId }
+    });
+
+    if (!existingSetting) {
+      return NextResponse.json({ 
+        success: false, 
+        error: "School settings not found" 
+      }, { status: 404 });
+    }
+
+    // Delete classes first (due to foreign key constraint)
+    await prisma.class.deleteMany({
+      where: { settingId: existingSetting.id }
+    });
+
+    // Delete the setting
+    await prisma.setting.delete({
+      where: { schoolId }
+    });
+
+    return NextResponse.json({ 
+      success: true, 
+      message: "Settings deleted successfully" 
+    });
+
+  } catch (error) {
+    console.error("Delete API Error:", error);
+    return NextResponse.json({ 
+      success: false, 
+      error: "Failed to delete settings" 
+    }, { status: 500 });
+  }
+}

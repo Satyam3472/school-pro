@@ -39,7 +39,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <DashboardNavContext.Provider value={{ breadcrumb, setBreadcrumb, pageTitle, setPageTitle }}>
       <SidebarProvider
         style={{
-          "--sidebar-width": "17rem",
+          "--sidebar-width": "18rem",
         } as React.CSSProperties}
       >
         <AppSidebar />

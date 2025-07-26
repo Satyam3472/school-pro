@@ -27,4 +27,7 @@ const showErrorAlert = (title: string, description: string) => {
   )
 }
 
+// docker run --name mysql-school -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=school_db -p 3306:3306 -v mysql_school_data:/var/lib/mysql -d mysql
+// npx prisma db push
+
 export {showErrorAlert, showSuccessAlert};

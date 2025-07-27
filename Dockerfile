@@ -10,6 +10,12 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 RUN npm install
 
+# Copy Prisma schema first
+COPY prisma ./prisma
+
+# Generate Prisma client
+RUN npx prisma generate
+
 # Copy the rest of the app
 COPY . .
 

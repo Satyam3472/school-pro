@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(req: Request, { params }: { params: { schoolId: string } }) {
-  const { schoolId } = params;
+export async function GET(req: Request, { params }: { params: Promise<{ schoolId: string }> }) {
+  const { schoolId } = await params;
 
   try {
     const setting = await prisma.setting.findUnique({
@@ -21,8 +21,8 @@ export async function GET(req: Request, { params }: { params: { schoolId: string
   }
 }
 
-export async function PUT(req: Request, { params }: { params: { schoolId: string } }) {
-  const { schoolId } = params;
+export async function PUT(req: Request, { params }: { params: Promise<{ schoolId: string }> }) {
+  const { schoolId } = await params;
 
   try {
     const data = await req.json();
@@ -93,8 +93,8 @@ export async function PUT(req: Request, { params }: { params: { schoolId: string
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: { schoolId: string } }) {
-  const { schoolId } = params;
+export async function DELETE(req: Request, { params }: { params: Promise<{ schoolId: string }> }) {
+  const { schoolId } = await params;
 
   try {
     // Check if settings exist

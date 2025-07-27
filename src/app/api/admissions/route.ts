@@ -1,7 +1,7 @@
 // app/api/admissions/route.ts
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
+import { Prisma, FeeStatus } from "@prisma/client";
 
 // Utility: Validate required fields (after mapping)
 function validateAdmissionInput(body: any) {
@@ -26,6 +26,101 @@ function validateAdmissionInput(body: any) {
     if (!body[field]) return `Missing required admission field: ${field}`;
   }
   return null;
+}
+
+// Utility: Create monthly fees for a student
+async function createMonthlyFees(studentId: number, classEnrolled: string, admissionDate: Date) {
+  type MonthlyFeeInput = {
+    studentId: number;
+    month: number;
+    year: number;
+    tuitionFee: number;
+    admissionFee: number;
+    totalAmount: number;
+    paidAmount: number;
+    dueDate: Date;
+    status: 'PENDING' | 'PAID' | 'PARTIALLY_PAID';
+  };
+  try {
+    // Get class fees from settings
+    const settings = await prisma.setting.findFirst({
+      where: { schoolId: "KidsLifeSchool" },
+      include: {
+        classes: true
+      }
+    });
+
+    if (!settings) {
+      console.error("School settings not found");
+      return;
+    }
+
+    const classFee = settings.classes.find(cls => cls.name === classEnrolled);
+    if (!classFee) {
+      console.error(`Class fees not found for ${classEnrolled}`);
+      return;
+    }
+
+    // Calculate financial year (April to March)
+    const admissionYear = admissionDate.getFullYear();
+    const admissionMonth = admissionDate.getMonth() + 1; // 1-12
+    const financialYear = admissionMonth >= 4 ? admissionYear : admissionYear - 1;
+
+    // Create monthly fees for the financial year
+    const monthlyFees = [];
+    const admissionFee = parseFloat(classFee.admissionFee.toString());
+    const tuitionFee = parseFloat(classFee.tuitionFee.toString());
+
+    // Start from the admission month or April, whichever is later
+    const startMonth = Math.max(admissionMonth, 4);
+    
+    for (let month = startMonth; month <= 12; month++) {
+      const year = financialYear;
+      const dueDate = new Date(year, month - 1, 15); // 15th of each month
+      
+      const totalAmount = month === startMonth ? tuitionFee + admissionFee : tuitionFee;
+      
+      monthlyFees.push({
+        studentId,
+        month,
+        year,
+        tuitionFee,
+        admissionFee: month === startMonth ? admissionFee : 0,
+        totalAmount,
+        paidAmount: 0,
+        dueDate,
+        status: FeeStatus.PENDING
+      });
+    }
+
+    // Add fees for next year (January to March)
+    for (let month = 1; month <= 3; month++) {
+      const year = financialYear + 1;
+      const dueDate = new Date(year, month - 1, 15);
+      
+      monthlyFees.push({
+        studentId,
+        month,
+        year,
+        tuitionFee,
+        admissionFee: 0,
+        totalAmount: tuitionFee,
+        paidAmount: 0,
+        dueDate,
+        status: FeeStatus.PENDING
+      });
+    }
+
+    // Create all monthly fees
+    await prisma.monthlyFee.createMany({
+      data: monthlyFees,
+      skipDuplicates: true
+    });
+
+    console.log(`Created ${monthlyFees.length} monthly fees for student ${studentId}`);
+  } catch (error) {
+    console.error("Error creating monthly fees:", error);
+  }
 }
 
 export async function POST(req: Request) {
@@ -95,6 +190,9 @@ export async function POST(req: Request) {
         remarks: body.remarks,
       },
     });
+
+    // Create monthly fees for the student
+    await createMonthlyFees(student.id, body.classEnrolled, admissionDate);
 
     return NextResponse.json({ success: true, data: { student, admission } }, { status: 201 });
   } catch (error: any) {

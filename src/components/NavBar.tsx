@@ -14,8 +14,10 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
 import { SCHOOL_NAME } from '../data/data';
+import { useRouter } from 'next/navigation';
 
 const NavBar = () => {
+  const router = useRouter();
   const [adminView, setAdminView] = useState(false);
 
   return (
@@ -80,13 +82,12 @@ const NavBar = () => {
 
         {/* Admin Panel */}
         <div className="hidden lg:block">
-        <Link href="/dashboard" passHref>
           <Button
+            onClick={() => router.push("/dashboard")}
             className="bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white text-sm px-4 py-2 shadow"
           >
             Admin Panel
           </Button>
-          </Link>
         </div>
 
         {/* Mobile Menu */}
@@ -121,13 +122,12 @@ const NavBar = () => {
 
                 <Link href="/contact" className="block font-medium text-gray-800 hover:text-blue-600">Contact</Link>
 
-                <Link href="/dashboard" passHref>
                   <Button
+                    onClick={() => router.push("/dashboard")}
                     className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white shadow mt-4"
                   >
                     Admin Panel
                   </Button>
-                </Link>
               </div>
             </SheetContent>
           </Sheet>

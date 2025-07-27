@@ -108,7 +108,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 icon: <BadgeIndianRupee className="mr-2 h-4 w-4" />,
                 url: "/dashboard/feeManagement",
                 items: [
-                  { title: "Fee Management", url: "/dashboard/fee-manangement" },
+                  { title: "Fee Management", url: "/dashboard/fee-management" },
                   { title: "Expenses", url: "/dashboard/expenses" },
                 ],
               },

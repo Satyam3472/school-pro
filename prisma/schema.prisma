@@ -24,6 +24,7 @@ model Student {
   updatedAt   DateTime   @updatedAt
   admission   Admission?
   fees        Fee[]
+  monthlyFees MonthlyFee[]
 }
 
 model Admission {
@@ -54,6 +55,27 @@ model Fee {
   @@index([studentId], map: "Fee_studentId_fkey")
 }
 
+model MonthlyFee {
+  id          Int       @id @default(autoincrement())
+  studentId   Int
+  month       Int       // 1-12 for months
+  year        Int       // Financial year (e.g., 2025)
+  tuitionFee  Decimal   @db.Decimal(10, 2)
+  admissionFee Decimal  @db.Decimal(10, 2)
+  totalAmount Decimal   @db.Decimal(10, 2)
+  paidAmount  Decimal   @db.Decimal(10, 2) @default(0)
+  dueDate     DateTime
+  paidDate    DateTime?
+  status      FeeStatus @default(PENDING)
+  remarks     String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  student     Student   @relation(fields: [studentId], references: [id])
+
+  @@unique([studentId, month, year])
+  @@index([studentId], map: "MonthlyFee_studentId_fkey")
+}
+
 model Expense {
   id          Int      @id @default(autoincrement())
   title       String
@@ -64,7 +86,6 @@ model Expense {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
-
 
 model Setting {
   id          Int      @id @default(autoincrement())
@@ -82,7 +103,6 @@ model Setting {
   updatedAt   DateTime @updatedAt
 }
 
-
 model Class {
   id            Int     @id @default(autoincrement())
   name          String
@@ -91,7 +111,6 @@ model Class {
   settingId     Int
   setting       Setting @relation(fields: [settingId], references: [id])
 }
-
 
 enum FeeStatus {
   PAID

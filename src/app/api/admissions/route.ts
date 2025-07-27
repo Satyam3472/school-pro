@@ -30,17 +30,6 @@ function validateAdmissionInput(body: any) {
 
 // Utility: Create monthly fees for a student
 async function createMonthlyFees(studentId: number, classEnrolled: string, admissionDate: Date) {
-  type MonthlyFeeInput = {
-    studentId: number;
-    month: number;
-    year: number;
-    tuitionFee: number;
-    admissionFee: number;
-    totalAmount: number;
-    paidAmount: number;
-    dueDate: Date;
-    status: 'PENDING' | 'PAID' | 'PARTIALLY_PAID';
-  };
   try {
     // Get class fees from settings
     const settings = await prisma.setting.findFirst({
@@ -66,26 +55,25 @@ async function createMonthlyFees(studentId: number, classEnrolled: string, admis
     const admissionMonth = admissionDate.getMonth() + 1; // 1-12
     const financialYear = admissionMonth >= 4 ? admissionYear : admissionYear - 1;
 
-    // Create monthly fees for the financial year
+    // Create exactly 12 monthly fees from April to March
     const monthlyFees = [];
     const admissionFee = parseFloat(classFee.admissionFee.toString());
     const tuitionFee = parseFloat(classFee.tuitionFee.toString());
 
-    // Start from the admission month or April, whichever is later
-    const startMonth = Math.max(admissionMonth, 4);
-    
-    for (let month = startMonth; month <= 12; month++) {
+    // Create fees for April to December of current financial year
+    for (let month = 4; month <= 12; month++) {
       const year = financialYear;
-      const dueDate = new Date(year, month - 1, 15); // 15th of each month
+      const dueDate = new Date(year, month - 1, 1); // 1st of each month
       
-      const totalAmount = month === startMonth ? tuitionFee + admissionFee : tuitionFee;
+      // Add admission fee only to the first month (April)
+      const totalAmount = month === 4 ? tuitionFee + admissionFee : tuitionFee;
       
       monthlyFees.push({
         studentId,
         month,
         year,
         tuitionFee,
-        admissionFee: month === startMonth ? admissionFee : 0,
+        admissionFee: month === 4 ? admissionFee : 0,
         totalAmount,
         paidAmount: 0,
         dueDate,
@@ -93,10 +81,10 @@ async function createMonthlyFees(studentId: number, classEnrolled: string, admis
       });
     }
 
-    // Add fees for next year (January to March)
+    // Create fees for January to March of next financial year
     for (let month = 1; month <= 3; month++) {
       const year = financialYear + 1;
-      const dueDate = new Date(year, month - 1, 15);
+      const dueDate = new Date(year, month - 1, 1); // 1st of each month
       
       monthlyFees.push({
         studentId,
@@ -117,7 +105,7 @@ async function createMonthlyFees(studentId: number, classEnrolled: string, admis
       skipDuplicates: true
     });
 
-    console.log(`Created ${monthlyFees.length} monthly fees for student ${studentId}`);
+    console.log(`Created ${monthlyFees.length} monthly fees for student ${studentId} (April ${financialYear} to March ${financialYear + 1})`);
   } catch (error) {
     console.error("Error creating monthly fees:", error);
   }

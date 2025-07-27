@@ -184,11 +184,41 @@ export default function FeeManagementPage() {
   }
 
   const getPendingFeesCount = (student: Student) => {
-    // Count pending fees from the monthlyFees state
-    return monthlyFees.filter(fee => 
-      fee.studentId === student.id && 
-      fee.status !== 'PAID'
-    ).length
+    // Calculate pending months from April to current month
+    const currentDate = new Date()
+    const currentMonth = currentDate.getMonth() + 1 // 1-12
+    const currentYear = currentDate.getFullYear()
+    
+    // Financial year starts from April (month 4)
+    const getFinancialYear = (date: Date) => {
+      const year = date.getFullYear()
+      const month = date.getMonth() + 1
+      return month >= 4 ? year : year - 1
+    }
+    
+    const currentFinancialYear = getFinancialYear(currentDate)
+    
+    // Count pending months from April to current month
+    let pendingMonths = 0
+    
+    // Check months from April to current month
+    for (let month = 4; month <= currentMonth; month++) {
+      const year = month >= 4 ? currentFinancialYear : currentFinancialYear + 1
+      
+      // Find the monthly fee for this month
+      const monthlyFee = monthlyFees.find(fee => 
+        fee.studentId === student.id && 
+        fee.month === month && 
+        fee.year === year
+      )
+      
+      // If fee exists and is not paid, count as pending
+      if (monthlyFee && monthlyFee.status !== 'PAID') {
+        pendingMonths++
+      }
+    }
+    
+    return pendingMonths
   }
 
   const fetchFeeDetails = async (studentId: number) => {
@@ -205,8 +235,8 @@ export default function FeeManagementPage() {
         const student = students.find(s => s.id === studentId)
         if (student) {
           const monthlyFees = result.data
-          const totalAmount = monthlyFees.reduce((sum: number, fee: MonthlyFee) => sum + fee.totalAmount, 0)
-          const paidAmount = monthlyFees.filter((fee: MonthlyFee) => fee.status === 'PAID').reduce((sum: number, fee: MonthlyFee) => sum + fee.totalAmount, 0)
+          const totalAmount = monthlyFees.reduce((sum: number, fee: MonthlyFee) => sum + Number(fee.totalAmount), 0)
+          const paidAmount = monthlyFees.filter((fee: MonthlyFee) => fee.status === 'PAID').reduce((sum: number, fee: MonthlyFee) => sum + Number(fee.totalAmount), 0)
           const pendingAmount = totalAmount - paidAmount
           const pendingMonths = monthlyFees.filter((fee: MonthlyFee) => fee.status !== 'PAID').length
 
@@ -746,7 +776,7 @@ export default function FeeManagementPage() {
 
       {/* Add New Fee Modal */}
       <Dialog open={isAddFeeModalOpen} onOpenChange={setIsAddFeeModalOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Plus className="h-5 w-5" />

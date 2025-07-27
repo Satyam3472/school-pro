@@ -133,7 +133,7 @@ export async function POST(request: Request) {
 
     for (let month = 4; month <= 12; month++) {
       const year = financialYear;
-      const dueDate = new Date(year, month - 1, 15); // 15th of each month
+      const dueDate = new Date(year, month - 1, 1); // 1st of each month
       
       const totalAmount = month === 4 ? tuitionFee + admissionFee : tuitionFee;
       
@@ -153,7 +153,7 @@ export async function POST(request: Request) {
     // Add fees for next year (January to March)
     for (let month = 1; month <= 3; month++) {
       const year = financialYear + 1;
-      const dueDate = new Date(year, month - 1, 15);
+      const dueDate = new Date(year, month - 1, 1); // 1st of each month
       
       monthlyFees.push({
         studentId: parseInt(studentId),

@@ -77,7 +77,7 @@ interface FeeDetails {
 
 export default function FeeManagementPage() {
   const [students, setStudents] = useState<Student[]>([])
-  const [fees, setFees] = useState<Fee[]>([])
+  const [fees, setFees] = useState<MonthlyFee[]>([])
   const [monthlyFees, setMonthlyFees] = useState<MonthlyFee[]>([])
   const [feeDetails, setFeeDetails] = useState<FeeDetails | null>(null)
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
@@ -161,7 +161,7 @@ export default function FeeManagementPage() {
 
   const fetchFees = async () => {
     try {
-      const response = await fetch("/api/fee-manangement")
+      const response = await fetch("/api/monthly-fees")
       const result = await response.json()
       if (result.success) {
         setFees(result.data)
@@ -340,15 +340,15 @@ export default function FeeManagementPage() {
     return matchesSearch && matchesClass
   })
 
-  const filteredFees = fees.filter(fee => {
-    const matchesStatus = filterStatus === "all" || fee.status === filterStatus
-    return matchesStatus
+  const filteredFees = fees.filter((fee: any) => {
+    // Only show PAID fees in the Fee Records table
+    return fee.status === 'PAID'
   })
 
   const getTotalCollection = () => {
     return fees
       .filter(fee => fee.status === 'PAID')
-      .reduce((sum, fee) => sum + Number(fee.amount), 0)
+      .reduce((sum, fee) => sum + Number(fee.totalAmount), 0)
   }
 
   const getPaidThisMonth = () => {
@@ -362,7 +362,7 @@ export default function FeeManagementPage() {
         const paidDate = new Date(fee.paidDate)
         return paidDate.getMonth() === currentMonth && paidDate.getFullYear() === currentYear
       })
-      .reduce((sum, fee) => sum + Number(fee.amount), 0)
+      .reduce((sum, fee) => sum + Number(fee.totalAmount), 0)
   }
 
   if (loading) {
@@ -391,120 +391,112 @@ export default function FeeManagementPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="border-l-4 border-l-blue-500">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-blue-600">Total Students</CardTitle>
-            <User className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{students.length}</div>
-            <p className="text-xs text-muted-foreground">Enrolled students</p>
-          </CardContent>
-        </Card>
-        <Card className="border-l-4 border-l-orange-500">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-orange-600">Pending Fees</CardTitle>
-            <AlertCircle className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              {students.filter(s => getPendingFeesCount(s) > 0).length}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          {
+            title: "Total Students",
+            icon: <User className="h-5 w-5 text-blue-500" />,
+            value: students.length,
+            subtitle: "Enrolled",
+            color: "blue",
+          },
+          {
+            title: "Pending Fees",
+            icon: <AlertCircle className="h-5 w-5 text-orange-500" />,
+            value: students.filter((s) => getPendingFeesCount(s) > 0).length,
+            subtitle: "With pending fees",
+            color: "orange",
+          },
+          {
+            title: "Paid This Month",
+            icon: <CheckCircle className="h-5 w-5 text-green-500" />,
+            value: `₹${getPaidThisMonth()}`,
+            subtitle: "Collected",
+            color: "green",
+          },
+          {
+            title: "Total Collection",
+            icon: <DollarSign className="h-5 w-5 text-purple-500" />,
+            value: `₹${getTotalCollection()}`,
+            subtitle: "Till now",
+            color: "purple",
+          },
+        ].map((stat, index) => (
+          <div
+            key={index}
+            className={`
+              flex items-center justify-between gap-4 px-4 py-3 rounded-lg shadow-sm
+              bg-gradient-to-br from-${stat.color}-50 to-white dark:from-${stat.color}-950 dark:to-zinc-900
+              border-l-4 border-${stat.color}-500
+              hover:shadow-md transition-shadow duration-200
+            `}
+          >
+            <div className="flex-1">
+              <h4 className="text-sm font-medium text-muted-foreground">{stat.title}</h4>
+              <div className={`text-lg font-semibold text-${stat.color}-700 dark:text-${stat.color}-300`}>
+                {stat.value}
+              </div>
+              <p className="text-xs text-muted-foreground">{stat.subtitle}</p>
             </div>
-            <p className="text-xs text-muted-foreground">Students with pending fees</p>
-          </CardContent>
-        </Card>
-        <Card className="border-l-4 border-l-green-500">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-600">Paid This Month</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">₹{getPaidThisMonth()}</div>
-            <p className="text-xs text-muted-foreground">This month's collection</p>
-          </CardContent>
-        </Card>
-        <Card className="border-l-4 border-l-purple-500">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-600">Total Collection</CardTitle>
-            <DollarSign className="h-4 w-4 text-purple-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">₹{getTotalCollection()}</div>
-            <p className="text-xs text-muted-foreground">Total fees collected</p>
-          </CardContent>
-        </Card>
+            <div className="bg-white dark:bg-zinc-800/30 p-2 rounded-md shadow-inner">
+              {stat.icon}
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Filters */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <Label htmlFor="search">Search Students</Label>
-              <div className="relative">
+        <CardHeader className="space-y-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+              <User className="h-5 w-5 text-primary" />
+              Student Fee Status
+            </CardTitle>
+            <div className="flex flex-wrap gap-3 md:gap-4 items-end justify-end">
+              {/* Search */}
+              <div className="relative w-full sm:w-56">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="search"
-                  placeholder="Search by student name or father's name..."
+                  placeholder="Search name or father’s name..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 text-sm"
                 />
               </div>
-            </div>
-            <div className="w-48">
-              <Label htmlFor="class-filter">Filter by Class</Label>
-              <Select value={filterClass} onValueChange={setFilterClass}>
-                <SelectTrigger id="class-filter">
-                  <SelectValue placeholder="All Classes" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Classes</SelectItem>
-                  <SelectItem value="Nursery">Nursery</SelectItem>
-                  <SelectItem value="LKG">LKG</SelectItem>
-                  <SelectItem value="UKG">UKG</SelectItem>
-                  <SelectItem value="1">Class 1</SelectItem>
-                  <SelectItem value="2">Class 2</SelectItem>
-                  <SelectItem value="3">Class 3</SelectItem>
-                  <SelectItem value="4">Class 4</SelectItem>
-                  <SelectItem value="5">Class 5</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="w-48">
-              <Label htmlFor="status-filter">Filter by Status</Label>
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger id="status-filter">
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="PAID">Paid</SelectItem>
-                  <SelectItem value="PENDING">Pending</SelectItem>
-                  <SelectItem value="PARTIALLY_PAID">Partially Paid</SelectItem>
-                </SelectContent>
-              </Select>
+              {/* Filter by Class */}
+              <div className="w-full sm:w-40">
+                <Select value={filterClass} onValueChange={setFilterClass}>
+                  <SelectTrigger className="text-sm">
+                    <SelectValue placeholder="Class" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Classes</SelectItem>
+                    {["Nursery", "LKG", "UKG", "1", "2", "3", "4", "5"].map((cls) => (
+                      <SelectItem key={cls} value={cls}>{cls === "1" ? "Class 1" : cls}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {/* Filter by Status */}
+              <div className="w-full sm:w-40">
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="text-sm">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="PAID">Paid</SelectItem>
+                    <SelectItem value="PENDING">Pending</SelectItem>
+                    <SelectItem value="PARTIALLY_PAID">Partially Paid</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Students Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Student Fee Status
-          </CardTitle>
         </CardHeader>
-        <CardContent>
+
+        <CardContent className="p-0 overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -536,7 +528,7 @@ export default function FeeManagementPage() {
                       <TableCell>
                         <button
                           onClick={() => handleStudentClick(student)}
-                          className="font-medium text-primary hover:underline cursor-pointer"
+                          className="font-medium text-primary hover:underline"
                         >
                           {student.studentName}
                         </button>
@@ -547,10 +539,9 @@ export default function FeeManagementPage() {
                       </TableCell>
                       <TableCell>{student.admission?.section || "-"}</TableCell>
                       <TableCell>
-                        {student.admission?.admissionDate 
+                        {student.admission?.admissionDate
                           ? new Date(student.admission.admissionDate).toLocaleDateString()
-                          : "-"
-                        }
+                          : "-"}
                       </TableCell>
                       <TableCell>
                         <Badge variant={pendingMonths > 0 ? "destructive" : "secondary"}>
@@ -569,7 +560,7 @@ export default function FeeManagementPage() {
                           className="flex items-center gap-1"
                         >
                           <Calendar className="h-3 w-3" />
-                          View Details
+                          Details
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -581,12 +572,13 @@ export default function FeeManagementPage() {
         </CardContent>
       </Card>
 
+
       {/* Fee Records Table */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5" />
-            Fee Records
+            Fee Payment Records
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -595,6 +587,7 @@ export default function FeeManagementPage() {
               <TableRow>
                 <TableHead>Student</TableHead>
                 <TableHead>Amount</TableHead>
+                <TableHead>Month/Year</TableHead>
                 <TableHead>Due Date</TableHead>
                 <TableHead>Paid Date</TableHead>
                 <TableHead>Status</TableHead>
@@ -604,7 +597,7 @@ export default function FeeManagementPage() {
             <TableBody>
               {filteredFees.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
+                  <TableCell colSpan={7} className="text-center py-8">
                     <div className="text-muted-foreground">
                       <DollarSign className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p>No fee records found</p>
@@ -615,9 +608,12 @@ export default function FeeManagementPage() {
                 filteredFees.map((fee) => (
                   <TableRow key={fee.id} className="hover:bg-muted/50">
                     <TableCell className="font-medium">
-                      {fee.student?.studentName || `Student ${fee.studentId}`}
+                      {students.find(s => s.id === fee.studentId)?.studentName || `Student ${fee.studentId}`}
                     </TableCell>
-                    <TableCell>₹{Number(fee.amount)}</TableCell>
+                    <TableCell>₹{Number(fee.totalAmount)}</TableCell>
+                    <TableCell>
+                      {getMonthName(fee.month)} {fee.year}
+                    </TableCell>
                     <TableCell>
                       {new Date(fee.dueDate).toLocaleDateString()}
                     </TableCell>

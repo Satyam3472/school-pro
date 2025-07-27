@@ -206,7 +206,7 @@ export async function PUT(request: Request) {
     if (status) updateData.status = status;
     if (remarks !== undefined) updateData.remarks = remarks;
     
-    if (status === 'PAID' && paidAmount > 0) {
+    if (status === 'PAID') {
       updateData.paidDate = new Date();
     }
 

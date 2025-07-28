@@ -24,6 +24,7 @@ services:
       - db
     environment:
       DATABASE_URL: mysql://root:root@db:3306/school_db
+      SESSION_SECRET: "your-super-secret-session-key-with-at-least-32-characters-long"
     restart: unless-stopped
 
 volumes:

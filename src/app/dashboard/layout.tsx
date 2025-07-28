@@ -2,7 +2,7 @@
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -11,6 +11,22 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+
+
+// School data context
+const SchoolDataContext = createContext<{
+  schoolData: any;
+  loading: boolean;
+  error: string | null;
+}>({
+  schoolData: null,
+  loading: true,
+  error: null,
+});
+
+export function useSchoolData() {
+  return useContext(SchoolDataContext);
+}
 
 // Navigation context for dashboard
 const DashboardNavContext = createContext<{
@@ -34,10 +50,47 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { label: "Dashboard", href: "/dashboard" },
   ]);
   const [pageTitle, setPageTitle] = useState("Dashboard");
+  
+  // School data state - start with loading true to prevent hydration mismatch
+  const [schoolData, setSchoolData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch school data once when layout mounts
+  useEffect(() => {
+    const fetchSchoolData = async () => {
+      try {
+        // Only run on client side to avoid hydration mismatch
+        if (typeof window === 'undefined') return;
+        
+        const response = await fetch('/api/dashboard/school-data');
+        if (!response.ok) {
+          if (response.status === 401) {
+            setError("Session expired. Please login again.");
+          } else {
+            throw new Error(`Failed to fetch school data: ${response.status}`);
+          }
+          setLoading(false);
+          return;
+        }
+        
+        const data = await response.json();
+        setSchoolData(data);
+        setLoading(false);
+      } catch (err) {
+        console.error("Failed to load school data:", err);
+        setError(err instanceof Error ? err.message : "Failed to load school data");
+        setLoading(false);
+      }
+    };
+
+    fetchSchoolData();
+  }, []); // Empty dependency array - only run once
 
   return (
-    <DashboardNavContext.Provider value={{ breadcrumb, setBreadcrumb, pageTitle, setPageTitle }}>
-      <SidebarProvider
+    <SchoolDataContext.Provider value={{ schoolData, loading, error }}>
+      <DashboardNavContext.Provider value={{ breadcrumb, setBreadcrumb, pageTitle, setPageTitle }}>
+        <SidebarProvider
         style={{
           "--sidebar-width": "18rem",
         } as React.CSSProperties}
@@ -73,6 +126,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </SidebarInset>
       </SidebarProvider>
-    </DashboardNavContext.Provider>
+      </DashboardNavContext.Provider>
+    </SchoolDataContext.Provider>
   );
 } 

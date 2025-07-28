@@ -8,8 +8,7 @@ import {
 } from "lucide-react"
 
 import Image from "next/image"
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import Link from "next/link"
 import {
   Sidebar,
   SidebarContent,
@@ -25,20 +24,78 @@ import {
 } from "@/components/ui/sidebar"
 import { NavUser } from "./nav-user"
 import { Button } from "./ui/button"
+import { useSchoolData } from "@/app/dashboard/layout"
+import { useMemo } from "react"
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const [data, setData] = useState<any>(null)
-  const router = useRouter()
+export const AppSidebar = React.memo(function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { schoolData: data, loading, error } = useSchoolData();
 
-  useEffect(() => {
-    fetch("/api/settings/KidsLifeSchool")
-      .then((res) => res.json())
-      .then((result) => setData(result))
-      .catch((err) => console.error("Failed to load settings:", err))
-  }, [])
+  // Show loading state on server side to prevent hydration mismatch
+  if (typeof window === 'undefined' || loading) {
+    return (
+      <Sidebar variant="floating" {...props}>
+        <SidebarHeader>
+          <div className="flex items-center gap-3 p-4">
+            <div className="animate-pulse bg-gray-200 rounded-lg w-12 h-12"></div>
+            <div className="space-y-2">
+              <div className="animate-pulse bg-gray-200 rounded h-4 w-24"></div>
+              <div className="animate-pulse bg-gray-200 rounded h-3 w-16"></div>
+            </div>
+          </div>
+        </SidebarHeader>
+        <SidebarContent>
+          <div className="p-4 space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse bg-gray-200 rounded h-8"></div>
+            ))}
+          </div>
+        </SidebarContent>
+      </Sidebar>
+    );
+  }
 
-  if (!data) {
-    return null // Or a skeleton loader
+  // Memoize menu items to prevent unnecessary re-renders
+  const menuItems = useMemo(() => [
+    {
+      title: "Dashboard",
+      icon: <LayoutDashboard className="mr-2 h-4 w-4" />,
+      url: "/dashboard",
+    },
+    {
+      title: "Students",
+      icon: <Users className="mr-2 h-4 w-4" />,
+      url: "/dashboard/students",
+      items: [
+        { title: "All Students", url: "/dashboard/students" },
+        { title: "Admissions", url: "/dashboard/admissions" },
+      ],
+    },
+    {
+      title: "Finance",
+      icon: <BadgeIndianRupee className="mr-2 h-4 w-4" />,
+      url: "/dashboard/feeManagement",
+      items: [
+        { title: "Fee Management", url: "/dashboard/fee-management" },
+        { title: "Expenses", url: "/dashboard/expenses" },
+      ],
+    },
+  ], []);
+
+  if (error || !data) {
+    return (
+      <Sidebar variant="floating" {...props}>
+        <SidebarHeader>
+          <div className="p-4 text-center text-red-500">
+            {error || "Failed to load school data"}
+          </div>
+        </SidebarHeader>
+        <SidebarContent>
+          <div className="p-4 text-center text-sm text-muted-foreground">
+            Please refresh the page or contact support.
+          </div>
+        </SidebarContent>
+      </Sidebar>
+    );
   }
 
   console.log('Settings data:', data);
@@ -51,7 +108,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <a href="/">
+              <Link href="/">
                 <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                   {data.logoBase64 ? (
                     <img
@@ -79,7 +136,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     {data.slogan}
                   </span>
                 </div>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -88,37 +145,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <SidebarGroup>
           <SidebarMenu className="gap-2">
-            {[
-              {
-                title: "Dashboard",
-                icon: <LayoutDashboard className="mr-2 h-4 w-4" />,
-                url: "/dashboard",
-              },
-              {
-                title: "Students",
-                icon: <Users className="mr-2 h-4 w-4" />,
-                url: "/dashboard/students",
-                items: [
-                  { title: "All Students", url: "/dashboard/students" },
-                  { title: "Admissions", url: "/dashboard/admissions" },
-                ],
-              },
-              {
-                title: "Finance",
-                icon: <BadgeIndianRupee className="mr-2 h-4 w-4" />,
-                url: "/dashboard/feeManagement",
-                items: [
-                  { title: "Fee Management", url: "/dashboard/fee-management" },
-                  { title: "Expenses", url: "/dashboard/expenses" },
-                ],
-              },
-            ].map((item) => (
+            {menuItems.map((item) => (
               <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton asChild>
-                  <a href={item.url} className="font-medium flex items-center">
+                  <Link href={item.url} className="font-medium flex items-center">
                     {item.icon}
                     {item.title}
-                  </a>
+                  </Link>
                 </SidebarMenuButton>
 
                 {item.items?.length ? (
@@ -126,7 +159,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     {item.items.map((subItem) => (
                       <SidebarMenuSubItem key={subItem.title}>
                         <SidebarMenuSubButton asChild>
-                          <a href={subItem.url}>{subItem.title}</a>
+                          <Link href={subItem.url}>{subItem.title}</Link>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     ))}
@@ -143,10 +176,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           variant="outline"
           size="sm"
           className="gap-1.5"
-          onClick={() => router.push("/dashboard/settings")}
+          asChild
         >
-          <Settings className="w-3.5 h-3.5" />
-          <span>Settings</span>
+          <Link href="/dashboard/settings">
+            <Settings className="w-3.5 h-3.5" />
+            <span>Settings</span>
+          </Link>
         </Button>
         <NavUser
           user={{
@@ -160,4 +195,4 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarFooter>
     </Sidebar>
   )
-}
+});

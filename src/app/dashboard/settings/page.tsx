@@ -22,6 +22,7 @@ export default function SettingsPage() {
     classes: [{ id: 1, name: '', tuitionFee: '', admissionFee: '' }],
   });
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const { setBreadcrumb, setPageTitle } = useDashboardNav();
 
@@ -118,7 +119,10 @@ export default function SettingsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (saving) return; // Prevent multiple submissions
+    
     try {
+      setSaving(true);
       const res = await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -134,6 +138,8 @@ export default function SettingsPage() {
     } catch (error) {
       console.error('Error saving settings:', error);
       showErrorAlert('Error', 'Failed to save settings');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -329,8 +335,19 @@ export default function SettingsPage() {
             </div>
 
             <div className="flex justify-end pt-4">
-              <Button type="submit" className="w-full sm:w-auto px-8 py-4 text-lg">
-                Save All Settings
+              <Button 
+                type="submit" 
+                className="w-full sm:w-auto px-8 py-4 text-lg"
+                disabled={saving}
+              >
+                {saving ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Saving...
+                  </>
+                ) : (
+                  'Save All Settings'
+                )}
               </Button>
             </div>
           </form>

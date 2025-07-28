@@ -6,7 +6,7 @@ import { getSecretKey } from "./auth";
 
 export async function createSession(userId: string, schoolId?: string): Promise<string> {
   const encodedKey = new TextEncoder().encode(getSecretKey());
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
   const payload: any = { userId, expiresAt };
   if (schoolId) {
@@ -24,7 +24,7 @@ export async function setSessionCookie(session: string): Promise<void> {
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
   (await cookies()).set("session", session, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: process.env.NODE_ENV === "production" && process.env.FORCE_HTTPS === "true",
     sameSite: "lax",
     expires: expiresAt,
     path: "/",

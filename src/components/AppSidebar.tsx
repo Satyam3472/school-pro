@@ -73,7 +73,7 @@ export const AppSidebar = React.memo(function AppSidebar({ ...props }: React.Com
     {
       title: "Finance",
       icon: <BadgeIndianRupee className="mr-2 h-4 w-4" />,
-      url: "/dashboard/feeManagement",
+      url: "/dashboard/fee-management",
       items: [
         { title: "Fee Management", url: "/dashboard/fee-management" },
         { title: "Expenses", url: "/dashboard/expenses" },

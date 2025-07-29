@@ -9,7 +9,7 @@ function validateAdmissionInput(body: any) {
     "studentName",
     "dateOfBirth",
     "gender",
-    "email",
+    // "email", // <-- make email non-mandatory
     "phone",
     "address"
   ];
@@ -29,7 +29,7 @@ function validateAdmissionInput(body: any) {
 }
 
 // Utility: Create monthly fees for a student
-async function createMonthlyFees(studentId: number, classEnrolled: string, admissionDate: Date) {
+async function createMonthlyFees(studentId: number, classEnrolled: string, admissionDate: Date, transportType: string = "None") {
   try {
     // Get class fees from settings
     const settings = await prisma.setting.findFirst({
@@ -50,6 +50,27 @@ async function createMonthlyFees(studentId: number, classEnrolled: string, admis
       return;
     }
 
+    // Calculate transport fee based on transport type
+    let transportFee = 0;
+    if (transportType !== "None") {
+      switch (transportType) {
+        case "Below 3KM":
+          transportFee = settings.transportFeeBelow3 || 0;
+          break;
+        case "3-5KM":
+          transportFee = settings.transportFeeBetween3and5 || 0;
+          break;
+        case "5-10KM":
+          transportFee = settings.transportFeeBetween5and10 || 0;
+          break;
+        case "Above 10KM":
+          transportFee = settings.transportFeeAbove10 || 0;
+          break;
+        default:
+          transportFee = 0;
+      }
+    }
+
     // Calculate financial year (April to March)
     const admissionYear = admissionDate.getFullYear();
     const admissionMonth = admissionDate.getMonth() + 1; // 1-12
@@ -66,7 +87,8 @@ async function createMonthlyFees(studentId: number, classEnrolled: string, admis
       const dueDate = new Date(year, month - 1, 1); // 1st of each month
       
       // Add admission fee only to the first month (April)
-      const totalAmount = month === 4 ? tuitionFee + admissionFee : tuitionFee;
+      // Add transport fee to all months if transport type is selected
+      const totalAmount = month === 4 ? tuitionFee + admissionFee + transportFee : tuitionFee + transportFee;
       
       monthlyFees.push({
         studentId,
@@ -84,7 +106,10 @@ async function createMonthlyFees(studentId: number, classEnrolled: string, admis
     // Create fees for January to March of next financial year
     for (let month = 1; month <= 3; month++) {
       const year = financialYear + 1;
-      const dueDate = new Date(year, month - 1, 1); // 1st of each month
+      const dueDate = new Date(year, month - 1, 1);
+      
+      // Add transport fee to all months if transport type is selected
+      const totalAmount = tuitionFee + transportFee;
       
       monthlyFees.push({
         studentId,
@@ -92,7 +117,7 @@ async function createMonthlyFees(studentId: number, classEnrolled: string, admis
         year,
         tuitionFee,
         admissionFee: 0,
-        totalAmount: tuitionFee,
+        totalAmount,
         paidAmount: 0,
         dueDate,
         status: FeeStatus.PENDING
@@ -105,7 +130,7 @@ async function createMonthlyFees(studentId: number, classEnrolled: string, admis
       skipDuplicates: true
     });
 
-    console.log(`Created ${monthlyFees.length} monthly fees for student ${studentId} (April ${financialYear} to March ${financialYear + 1})`);
+    console.log(`Created ${monthlyFees.length} monthly fees for student ${studentId} (April ${financialYear} to March ${financialYear + 1}) with transport fee: ${transportFee}`);
   } catch (error) {
     console.error("Error creating monthly fees:", error);
   }
@@ -131,6 +156,7 @@ export async function POST(req: Request) {
       section: rawBody.section || "", // Default to empty string if not provided
       academicYear: rawBody.academicYear || "", // Default to empty string if not provided
       remarks: rawBody.remarks || null,
+      transportType: rawBody.transportType || "None", // <-- new field
     };
 
     // Validate input
@@ -176,11 +202,12 @@ export async function POST(req: Request) {
         section: body.section,
         academicYear: body.academicYear,
         remarks: body.remarks,
+        transportType: body.transportType, // <-- store transport type
       },
     });
 
     // Create monthly fees for the student
-    await createMonthlyFees(student.id, body.classEnrolled, admissionDate);
+    await createMonthlyFees(student.id, body.classEnrolled, admissionDate, body.transportType);
 
     return NextResponse.json({ success: true, data: { student, admission } }, { status: 201 });
   } catch (error: any) {

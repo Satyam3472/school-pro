@@ -9,6 +9,13 @@ import { Plus, Trash2 } from 'lucide-react';
 import { useDashboardNav } from '../layout';
 import { showErrorAlert, showSuccessAlert } from '@/utils/customFunction';
 
+const TRANSPORT_FEE_DISTANCES = [
+  { key: 'below3', label: 'Below 3 KM' },
+  { key: 'between3and5', label: '3 - 5 KM' },
+  { key: 'between5and10', label: '5 - 10 KM' },
+  { key: 'above10', label: 'Above 10 KM' },
+];
+
 export default function SettingsPage() {
   const [formData, setFormData] = useState({
     schoolName: '',
@@ -20,6 +27,12 @@ export default function SettingsPage() {
     logoBase64: '',
     adminImageBase64: '',
     classes: [{ id: 1, name: '', tuitionFee: '', admissionFee: '' }],
+    transportFees: {
+      below3: '',
+      between3and5: '',
+      between5and10: '',
+      above10: '',
+    },
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -52,6 +65,14 @@ export default function SettingsPage() {
             admissionFee: cls.admissionFee?.toString() || '',
           })) || [{ id: 1, name: '', tuitionFee: '', admissionFee: '' }];
 
+          // Transform transport fees - use correct database field names
+          const transportFees = {
+            below3: data.transportFeeBelow3?.toString() || '',
+            between3and5: data.transportFeeBetween3and5?.toString() || '',
+            between5and10: data.transportFeeBetween5and10?.toString() || '',
+            above10: data.transportFeeAbove10?.toString() || '',
+          };
+
           setFormData({
             schoolName: data.schoolName || '',
             schoolId: data.schoolId || '',
@@ -62,6 +83,7 @@ export default function SettingsPage() {
             logoBase64: data.logoBase64 || '',
             adminImageBase64: data.adminImageBase64 || '',
             classes: transformedClasses,
+            transportFees,
           });
         } else {
           console.log('No existing settings found, using defaults');
@@ -99,6 +121,16 @@ export default function SettingsPage() {
       classes: prev.classes.map(cls =>
         cls.id === id ? { ...cls, [field]: value } : cls
       ),
+    }));
+  };
+
+  const handleTransportFeeChange = (key: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      transportFees: {
+        ...prev.transportFees,
+        [key]: value,
+      },
     }));
   };
 
@@ -143,7 +175,7 @@ export default function SettingsPage() {
     }
   };
 
-  const { schoolName, schoolId, slogan, adminName, adminEmail, password, classes } = formData;
+  const { schoolName, schoolId, slogan, adminName, adminEmail, password, classes, transportFees } = formData;
 
   if (loading) {
     return (
@@ -219,6 +251,31 @@ export default function SettingsPage() {
                   <Label htmlFor="schoolId">School ID*</Label>
                   <Input name="schoolId" value={schoolId} onChange={handleChange} required />
                 </div>
+              </div>
+            </div>
+
+            {/* Transport Fees Section */}
+            <div className="space-y-6">
+              <h3 className="text-lg font-medium">Transport Fees (per month)</h3>
+              <Separator />
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                {TRANSPORT_FEE_DISTANCES.map(({ key, label }) => (
+                  <div key={key} className="space-y-2">
+                    <Label>{label}</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1.5 text-muted-foreground">₹</span>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={transportFees[key as keyof typeof transportFees]}
+                        onChange={e => handleTransportFeeChange(key, e.target.value)}
+                        className="pl-8"
+                        placeholder="Enter fee"
+                        required
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 

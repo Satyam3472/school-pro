@@ -23,7 +23,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
-import { Plus, Pencil, Trash2, Eye, Calendar, DollarSign, CheckCircle, Clock, AlertCircle } from "lucide-react"
+import { Plus, Pencil, Trash2, Eye, Calendar, DollarSign, CheckCircle, Clock, AlertCircle, ToggleLeft, ToggleRight, Users, UserX } from "lucide-react"
 import { useDashboardNav } from "../layout"
 import { showErrorAlert, showSuccessAlert } from "@/utils/customFunction"
 
@@ -38,6 +38,7 @@ type StudentTableRow = {
   roll: number | string;
   address: string;
   status: string;
+  isActive: boolean;
   studentPhotoBase64?: string;
   aadhaarNumber?: string;
 };
@@ -70,6 +71,7 @@ export default function StudentsPage() {
   const [feeLoading, setFeeLoading] = useState(false)
   const [paymentAmount, setPaymentAmount] = useState("")
   const [selectedFeeId, setSelectedFeeId] = useState<number | null>(null)
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active')
 
   const { setBreadcrumb, setPageTitle } = useDashboardNav()
 
@@ -83,12 +85,14 @@ export default function StudentsPage() {
 
   useEffect(() => {
     fetchStudents()
-  }, [])
+  }, [statusFilter])
 
   const fetchStudents = async () => {
     try {
       setLoading(true)
-      const response = await fetch("/api/students")
+      // Fetch all students if status filter is "all" or "inactive", otherwise fetch only active students
+      const includeInactive = statusFilter === 'all' || statusFilter === 'inactive'
+      const response = await fetch(`/api/students${includeInactive ? '?includeInactive=true' : ''}`)
       const result = await response.json()
 
       if (result.success) {
@@ -103,7 +107,8 @@ export default function StudentsPage() {
           section: s.admission?.section || "-",
           roll: s.id, // No roll field in schema, using id as fallback
           address: s.address || "-",
-          status: "Active", // Placeholder, adjust as needed
+          status: s.isActive ? "Active" : "Inactive",
+          isActive: s.isActive,
           studentPhotoBase64: s.studentPhotoBase64 || null,
           aadhaarNumber: s.aadhaarNumber || "-",
         }))
@@ -219,6 +224,37 @@ export default function StudentsPage() {
     }
   }
 
+  const toggleStudentStatus = async (studentId: number, currentStatus: boolean) => {
+    try {
+      const response = await fetch("/api/students", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: studentId,
+          isActive: !currentStatus,
+        }),
+      })
+
+      const result = await response.json()
+      if (result.success) {
+        // Update the student in local state
+        setStudents(students.map(s => 
+          s.id === studentId 
+            ? { ...s, isActive: !currentStatus, status: !currentStatus ? "Active" : "Inactive" }
+            : s
+        ))
+        showSuccessAlert("Success", `Student ${!currentStatus ? 'activated' : 'deactivated'} successfully`)
+      } else {
+        showErrorAlert("Error", result.error || "Failed to update student status")
+      }
+    } catch (error) {
+      console.error("Error updating student status:", error)
+      showErrorAlert("Error", "Failed to update student status")
+    }
+  }
+
   const getMonthName = (month: number) => {
     const months = [
       "January", "February", "March", "April", "May", "June",
@@ -254,12 +290,21 @@ export default function StudentsPage() {
   }
 
   const filteredStudents = useMemo(() => {
-    return students.filter(student =>
+    let filtered = students.filter(student =>
       student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.fatherName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.grade.toLowerCase().includes(searchTerm.toLowerCase())
     )
-  }, [students, searchTerm])
+
+    // Apply status filter
+    if (statusFilter === 'active') {
+      filtered = filtered.filter(student => student.isActive)
+    } else if (statusFilter === 'inactive') {
+      filtered = filtered.filter(student => !student.isActive)
+    }
+
+    return filtered
+  }, [students, searchTerm, statusFilter])
 
   const sortedStudents = useMemo<StudentTableRow[]>(() => {
     return [...filteredStudents].sort((a, b) => {
@@ -364,6 +409,19 @@ export default function StudentsPage() {
             />
           </svg>
         </div>
+        
+        <div className="flex gap-2">
+          <Select value={statusFilter} onValueChange={(value: 'all' | 'active' | 'inactive') => setStatusFilter(value)}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="rounded-md border">
@@ -457,9 +515,15 @@ export default function StudentsPage() {
                   <TableCell>{student.section}</TableCell>
                   <TableCell className="max-w-xs truncate">{student.address}</TableCell>
                   <TableCell>
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      {student.status}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        student.isActive 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {student.status}
+                      </span>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -469,6 +533,19 @@ export default function StudentsPage() {
                         onClick={() => handleEditStudent(student)}
                       >
                         <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleStudentStatus(student.id, student.isActive)}
+                        className="h-6 w-6 p-0"
+                        title={student.isActive ? 'Deactivate student' : 'Activate student'}
+                      >
+                        {student.isActive ? (
+                          <ToggleLeft className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <ToggleRight className="h-4 w-4 text-red-600" />
+                        )}
                       </Button>
                     </div>
                   </TableCell>

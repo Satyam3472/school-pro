@@ -83,7 +83,7 @@ const NavBar = () => {
         {/* Admin Panel */}
         <div className="hidden lg:block">
           <Button
-            onClick={() => router.push("/dashboard")}
+            onClick={() => router.push("/login")}
             className="bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white text-sm px-4 py-2 shadow"
           >
             Admin Panel
@@ -123,7 +123,7 @@ const NavBar = () => {
                 <Link href="/contact" className="block font-medium text-gray-800 hover:text-blue-600">Contact</Link>
 
                   <Button
-                    onClick={() => router.push("/dashboard")}
+                    onClick={() => router.push("/login")}
                     className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white shadow mt-4"
                   >
                     Admin Panel

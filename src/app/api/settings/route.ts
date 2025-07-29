@@ -16,7 +16,8 @@ export async function POST(req: Request) {
       password,
       logoBase64,
       adminImageBase64,
-      classes
+      classes,
+      transportFees // <-- add this
     } = data;
 
     // Check if settings already exist for this school
@@ -45,6 +46,11 @@ export async function POST(req: Request) {
           password,
           logoBase64,
           adminImageBase64,
+          // Save transport fees
+          transportFeeBelow3: transportFees?.below3 ? parseFloat(transportFees.below3) : null,
+          transportFeeBetween3and5: transportFees?.between3and5 ? parseFloat(transportFees.between3and5) : null,
+          transportFeeBetween5and10: transportFees?.between5and10 ? parseFloat(transportFees.between5and10) : null,
+          transportFeeAbove10: transportFees?.above10 ? parseFloat(transportFees.above10) : null,
           classes: {
             create: classes.map((cls: any) => ({
               name: cls.name,
@@ -67,6 +73,11 @@ export async function POST(req: Request) {
           password,
           logoBase64,
           adminImageBase64,
+          // Save transport fees
+          transportFeeBelow3: transportFees?.below3 ? parseFloat(transportFees.below3) : null,
+          transportFeeBetween3and5: transportFees?.between3and5 ? parseFloat(transportFees.between3and5) : null,
+          transportFeeBetween5and10: transportFees?.between5and10 ? parseFloat(transportFees.between5and10) : null,
+          transportFeeAbove10: transportFees?.above10 ? parseFloat(transportFees.above10) : null,
           classes: {
             create: classes.map((cls: any) => ({
               name: cls.name,

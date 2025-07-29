@@ -14,7 +14,7 @@ export default async function middleware(req: NextRequest) {
 
   // Redirect to login if accessing protected route without session
   if (isProtectedRoute && !session?.userId) {
-    return NextResponse.redirect(new URL("/login", req.nextUrl));
+    return NextResponse.redirect(new URL("/", req.nextUrl));
   }
 
   // Redirect to dashboard if accessing public route with valid session

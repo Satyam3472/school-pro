@@ -89,8 +89,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <SchoolDataContext.Provider value={{ schoolData, loading, error }}>
-      <DashboardNavContext.Provider value={{ breadcrumb, setBreadcrumb, pageTitle, setPageTitle }}>
-        <SidebarProvider
+    <DashboardNavContext.Provider value={{ breadcrumb, setBreadcrumb, pageTitle, setPageTitle }}>
+      <SidebarProvider
         style={{
           "--sidebar-width": "18rem",
         } as React.CSSProperties}
@@ -126,7 +126,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </SidebarInset>
       </SidebarProvider>
-      </DashboardNavContext.Provider>
+    </DashboardNavContext.Provider>
     </SchoolDataContext.Provider>
   );
 } 

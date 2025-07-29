@@ -20,6 +20,7 @@ model Student {
   motherName  String?
   aadhaarNumber String?
   studentPhotoBase64 String? @db.LongText
+  isActive    Boolean    @default(true)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   admission   Admission?
@@ -35,6 +36,7 @@ model Admission {
   section       String
   academicYear  String
   remarks       String?
+  transportType String   @default("None")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   student       Student  @relation(fields: [studentId], references: [id])
@@ -97,6 +99,12 @@ model Setting {
   password    String
   logoBase64       String   @db.LongText
   adminImageBase64 String   @db.LongText
+
+  // Transport fees
+  transportFeeBelow3      Float?
+  transportFeeBetween3and5 Float?
+  transportFeeBetween5and10 Float?
+  transportFeeAbove10      Float?
 
   classes     Class[]  // 1-to-many relationship
   createdAt   DateTime @default(now())

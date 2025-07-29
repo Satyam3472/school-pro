@@ -18,7 +18,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { useDashboardNav } from "../layout";
+import { useDashboardNav, useSchoolData } from "../layout";
 import { useRouter } from "next/navigation"
 import { Skeleton } from "@/components/ui/skeleton"
 import { showErrorAlert, showSuccessAlert } from "@/utils/customFunction"
@@ -44,11 +44,14 @@ export default function AdmissionForm() {
     admissionDate: "",
     section: "A",
     academicYear: "2025-2026",
+    transportType: "None", // <-- new field
   })
   const [loading, setLoading] = useState(false);
 
   const router = useRouter();
   const { setBreadcrumb, setPageTitle } = useDashboardNav();
+  const { schoolData, loading: schoolLoading } = useSchoolData();
+
   useEffect(() => {
     setBreadcrumb([
       { label: "Dashboard", href: "/dashboard" },
@@ -56,6 +59,13 @@ export default function AdmissionForm() {
     ]);
     setPageTitle("Admissions");
   }, [setBreadcrumb, setPageTitle]);
+
+  // Debug schoolData
+  useEffect(() => {
+    console.log('Admission Form - schoolData:', schoolData);
+    console.log('Admission Form - schoolLoading:', schoolLoading);
+    console.log('Admission Form - classes:', schoolData?.classes);
+  }, [schoolData, schoolLoading]);
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -105,6 +115,7 @@ export default function AdmissionForm() {
           admissionDate: "",
           section: "A",
           academicYear: "2025-2026",
+          transportType: "None",
         });
         setStep(0);
         router.push("/dashboard/students");
@@ -167,7 +178,7 @@ export default function AdmissionForm() {
             {step === 0 && (
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="md:col-span-2">
-                  <Label className="text-sm">Full Name</Label>
+                  <Label className="text-sm">Full Name *</Label>
                   <Input
                     placeholder="Enter student's full name"
                     value={formData.studentName}
@@ -177,7 +188,7 @@ export default function AdmissionForm() {
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <Label className="text-sm">Date of Birth</Label>
+                  <Label className="text-sm">Date of Birth *</Label>
                   <Input
                     type="date"
                     value={formData.dob}
@@ -187,7 +198,7 @@ export default function AdmissionForm() {
                   />
                 </div>
                 <div className="md:col-span-1">
-                  <Label className="text-sm">Gender</Label>
+                  <Label className="text-sm">Gender *</Label>
                   <Select value={formData.gender} onValueChange={(v) => handleChange("gender", v)}>
                     <SelectTrigger className="text-sm">
                       <SelectValue placeholder="Select Gender" />
@@ -200,25 +211,29 @@ export default function AdmissionForm() {
                   </Select>
                 </div>
                 <div className="md:col-span-1">
-                  <Label className="text-sm">Grade Applying For</Label>
-                  <Select value={formData.grade} onValueChange={(v) => handleChange("grade", v)}>
-                    <SelectTrigger className="text-sm w-[80%]">
-                      <SelectValue placeholder="Select Class" />
+                  <Label className="text-sm">Class *</Label>
+                  <Select value={formData.grade} onValueChange={(v) => handleChange("grade", v)} disabled={schoolLoading}>
+                    <SelectTrigger className="text-sm w-[100%]">
+                      <SelectValue placeholder={schoolLoading ? "Loading classes..." : "Select Class"} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Nursery">Nursery</SelectItem>
-                      <SelectItem value="LKG">LKG</SelectItem>
-                      <SelectItem value="UKG">UKG</SelectItem>
-                      <SelectItem value="Class 1">Class 1</SelectItem>
-                      <SelectItem value="Class 2">Class 2</SelectItem>
-                      <SelectItem value="Class 3">Class 3</SelectItem>
-                      <SelectItem value="Class 4">Class 4</SelectItem>
-                      <SelectItem value="Class 5">Class 5</SelectItem>
-                      <SelectItem value="Class 6">Class 6</SelectItem>
-                      <SelectItem value="Class 7">Class 7</SelectItem>
-                      <SelectItem value="Class 8">Class 8</SelectItem>
+                      {schoolLoading ? (
+                        <SelectItem value="loading" disabled>Loading classes...</SelectItem>
+                      ) : schoolData?.classes && schoolData.classes.length > 0 ? (
+                        schoolData.classes.map((cls: any) => (
+                          <SelectItem key={cls.name} value={cls.name}>{cls.name}</SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="no-classes" disabled>No classes found. Please add classes in settings first.</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
+                  {schoolLoading && (
+                    <p className="text-xs text-muted-foreground mt-1">Loading classes from settings...</p>
+                  )}
+                  {!schoolLoading && (!schoolData?.classes || schoolData.classes.length === 0) && (
+                    <p className="text-xs text-orange-600 mt-1">No classes configured. Please add classes in Settings first.</p>
+                  )}
                 </div>
                 <div className="md:col-span-2">
                   <Label className="text-sm">Aadhaar Number</Label>
@@ -280,9 +295,9 @@ export default function AdmissionForm() {
             )}
 
             {step === 1 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm">Father's Name</Label>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="md:col-span-2">
+                  <Label className="text-sm">Father's Name *</Label>
                   <Input
                     placeholder="Enter father's name"
                     value={formData.fatherName}
@@ -291,8 +306,8 @@ export default function AdmissionForm() {
                     className="text-sm"
                   />
                 </div>
-                <div>
-                  <Label className="text-sm">Mother's Name</Label>
+                <div className="md:col-span-2">
+                  <Label className="text-sm">Mother's Name *</Label>
                   <Input
                     placeholder="Enter mother's name"
                     value={formData.motherName}
@@ -301,8 +316,8 @@ export default function AdmissionForm() {
                     className="text-sm"
                   />
                 </div>
-                <div>
-                  <Label className="text-sm">Phone Number</Label>
+                <div className="md:col-span-1">
+                  <Label className="text-sm">Phone Number *</Label>
                   <Input
                     type="tel"
                     placeholder="+91 9876543210"
@@ -312,14 +327,28 @@ export default function AdmissionForm() {
                     className="text-sm"
                   />
                 </div>
-                <div>
+                <div className="md:col-span-1">
+                  <Label className="text-sm">Transport Type</Label>
+                  <Select value={formData.transportType} onValueChange={(v) => handleChange("transportType", v)}>
+                    <SelectTrigger className="text-sm w-[100%]">
+                      <SelectValue placeholder="Select Transport" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="None">None</SelectItem>
+                      <SelectItem value="Below 3KM">Below 3KM</SelectItem>
+                      <SelectItem value="3-5KM">3-5KM</SelectItem>
+                      <SelectItem value="5-10KM">5-10KM</SelectItem>
+                      <SelectItem value="Above 10KM">Above 10KM</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="md:col-span-2">
                   <Label className="text-sm">Email Address</Label>
                   <Input
                     type="email"
                     placeholder="parent@example.com"
                     value={formData.email}
                     onChange={(e) => handleChange("email", e.target.value)}
-                    required
                     className="text-sm"
                   />
                 </div>
@@ -329,7 +358,7 @@ export default function AdmissionForm() {
             {step === 2 && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-3">
-                  <Label className="text-sm">Address</Label>
+                  <Label className="text-sm">Address *</Label>
                   <Input
                     placeholder="House No, Street, Area"
                     value={formData.address}
@@ -339,7 +368,7 @@ export default function AdmissionForm() {
                   />
                 </div>
                 <div>
-                  <Label className="text-sm">City</Label>
+                  <Label className="text-sm">City *</Label>
                   <Input
                     value={formData.city}
                     placeholder="City name"
@@ -349,7 +378,7 @@ export default function AdmissionForm() {
                   />
                 </div>
                 <div>
-                  <Label className="text-sm">State</Label>
+                  <Label className="text-sm">State *</Label>
                   <Input
                     value={formData.state}
                     placeholder="State name"
@@ -359,7 +388,7 @@ export default function AdmissionForm() {
                   />
                 </div>
                 <div>
-                  <Label className="text-sm">Admission Date</Label>
+                  <Label className="text-sm">Admission Date *</Label>
                   <Input
                     type="date"
                     value={formData.admissionDate}

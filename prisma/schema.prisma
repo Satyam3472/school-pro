@@ -19,6 +19,7 @@ model Student {
   fatherName  String?
   motherName  String?
   aadhaarNumber String?
+  regNo       String?    // Registration Number field
   studentPhotoBase64 String? @db.LongText
   isActive    Boolean    @default(true)
   createdAt   DateTime   @default(now())

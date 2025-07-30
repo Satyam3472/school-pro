@@ -23,7 +23,7 @@ import { useRouter } from "next/navigation"
 import { Skeleton } from "@/components/ui/skeleton"
 import { showErrorAlert, showSuccessAlert } from "@/utils/customFunction"
 
-const steps = ["Student Info", "Parent Info", "Address & Admission"]
+const steps = ["Student Info", "Parent Info & Address", "Summary"]
 
 export default function AdmissionForm() {
   const [step, setStep] = useState(0)
@@ -44,7 +44,8 @@ export default function AdmissionForm() {
     admissionDate: "",
     section: "A",
     academicYear: "2025-2026",
-    transportType: "None", // <-- new field
+    transportType: "None",
+    regNo: "", // Registration Number field
   })
   const [loading, setLoading] = useState(false);
 
@@ -116,6 +117,7 @@ export default function AdmissionForm() {
           section: "A",
           academicYear: "2025-2026",
           transportType: "None",
+          regNo: "",
         });
         setStep(0);
         router.push("/dashboard/students");
@@ -133,6 +135,77 @@ export default function AdmissionForm() {
 
   const nextStep = () => setStep((s) => Math.min(s + 1, steps.length - 1))
   const prevStep = () => setStep((s) => Math.max(s - 1, 0))
+
+  // Calculate monthly fees for summary
+  const calculateMonthlyFees = () => {
+    if (!formData.grade || !schoolData?.classes) return null;
+
+    const selectedClass = schoolData.classes.find((cls: any) => cls.name === formData.grade);
+    if (!selectedClass) return null;
+
+    const tuitionFee = parseFloat(selectedClass.tuitionFee.toString());
+    const admissionFee = parseFloat(selectedClass.admissionFee.toString());
+    
+    // Calculate transport fee
+    let transportFee = 0;
+    if (formData.transportType !== "None" && schoolData) {
+      switch (formData.transportType) {
+        case "Below 3KM":
+          transportFee = schoolData.transportFeeBelow3 || 0;
+          break;
+        case "3-5KM":
+          transportFee = schoolData.transportFeeBetween3and5 || 0;
+          break;
+        case "5-10KM":
+          transportFee = schoolData.transportFeeBetween5and10 || 0;
+          break;
+        case "Above 10KM":
+          transportFee = schoolData.transportFeeAbove10 || 0;
+          break;
+        default:
+          transportFee = 0;
+      }
+    }
+
+    // Calculate financial year (April to March)
+    const admissionDate = formData.admissionDate ? new Date(formData.admissionDate) : new Date();
+    const admissionYear = admissionDate.getFullYear();
+    const admissionMonth = admissionDate.getMonth() + 1; // 1-12
+    const financialYear = admissionMonth >= 4 ? admissionYear : admissionYear - 1;
+
+    // Generate monthly fees from April to March
+    const monthlyFees = [];
+    const monthNames = [
+      "April", "May", "June", "July", "August", "September",
+      "October", "November", "December", "January", "February", "March"
+    ];
+
+    for (let i = 0; i < 12; i++) {
+      const month = i + 4; // Start from April (4)
+      const year = month <= 12 ? financialYear : financialYear + 1;
+      const monthName = monthNames[i];
+      
+      // Add admission fee only to the first month (April)
+      const totalAmount = month === 4 ? tuitionFee + admissionFee + transportFee : tuitionFee + transportFee;
+      
+      monthlyFees.push({
+        month: monthName,
+        year: year,
+        tuitionFee: tuitionFee,
+        admissionFee: month === 4 ? admissionFee : 0,
+        transportFee: transportFee,
+        totalAmount: totalAmount
+      });
+    }
+
+    return {
+      classInfo: selectedClass,
+      monthlyFees: monthlyFees,
+      totalAnnualFee: monthlyFees.reduce((sum, fee) => sum + fee.totalAmount, 0)
+    };
+  };
+
+  const feeBreakdown = calculateMonthlyFees();
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
@@ -295,107 +368,338 @@ export default function AdmissionForm() {
             )}
 
             {step === 1 && (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="md:col-span-2">
-                  <Label className="text-sm">Father's Name *</Label>
-                  <Input
-                    placeholder="Enter father's name"
-                    value={formData.fatherName}
-                    onChange={(e) => handleChange("fatherName", e.target.value)}
-                    required
-                    className="text-sm"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label className="text-sm">Mother's Name *</Label>
-                  <Input
-                    placeholder="Enter mother's name"
-                    value={formData.motherName}
-                    onChange={(e) => handleChange("motherName", e.target.value)}
-                    required
-                    className="text-sm"
-                  />
-                </div>
-                <div className="md:col-span-1">
-                  <Label className="text-sm">Phone Number *</Label>
-                  <Input
-                    type="tel"
-                    placeholder="+91 9876543210"
-                    value={formData.phone}
-                    onChange={(e) => handleChange("phone", e.target.value)}
-                    required
-                    className="text-sm"
-                  />
-                </div>
-                <div className="md:col-span-1">
-                  <Label className="text-sm">Transport Type</Label>
-                  <Select value={formData.transportType} onValueChange={(v) => handleChange("transportType", v)}>
-                    <SelectTrigger className="text-sm w-[100%]">
-                      <SelectValue placeholder="Select Transport" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="None">None</SelectItem>
-                      <SelectItem value="Below 3KM">Below 3KM</SelectItem>
-                      <SelectItem value="3-5KM">3-5KM</SelectItem>
-                      <SelectItem value="5-10KM">5-10KM</SelectItem>
-                      <SelectItem value="Above 10KM">Above 10KM</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="md:col-span-2">
-                  <Label className="text-sm">Email Address</Label>
-                  <Input
-                    type="email"
-                    placeholder="parent@example.com"
-                    value={formData.email}
-                    onChange={(e) => handleChange("email", e.target.value)}
-                    className="text-sm"
-                  />
+              <div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="md:col-span-2">
+                    <Label className="text-sm">Father's Name *</Label>
+                    <Input
+                      placeholder="Enter father's name"
+                      value={formData.fatherName}
+                      onChange={(e) => handleChange("fatherName", e.target.value)}
+                      required
+                      className="text-sm"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label className="text-sm">Mother's Name *</Label>
+                    <Input
+                      placeholder="Enter mother's name"
+                      value={formData.motherName}
+                      onChange={(e) => handleChange("motherName", e.target.value)}
+                      required
+                      className="text-sm"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label className="text-sm">Phone Number *</Label>
+                    <Input
+                      type="tel"
+                      placeholder="+91 9876543210"
+                      value={formData.phone}
+                      onChange={(e) => handleChange("phone", e.target.value)}
+                      required
+                      className="text-sm"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label className="text-sm">Email Address</Label>
+                    <Input
+                      type="email"
+                      placeholder="parent@example.com"
+                      value={formData.email}
+                      onChange={(e) => handleChange("email", e.target.value)}
+                      className="text-sm"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label className="text-sm">Address *</Label>
+                    <Input
+                      placeholder="House No, Street, Area"
+                      value={formData.address}
+                      onChange={(e) => handleChange("address", e.target.value)}
+                      required
+                      className="text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm">City *</Label>
+                    <Input
+                      value={formData.city}
+                      placeholder="City name"
+                      onChange={(e) => handleChange("city", e.target.value)}
+                      required
+                      className="text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm">State *</Label>
+                    <Input
+                      value={formData.state}
+                      placeholder="State name"
+                      onChange={(e) => handleChange("state", e.target.value)}
+                      required
+                      className="text-sm"
+                    />
+                  </div>
+                  <div className="md:col-span-1">
+                    <Label className="text-sm">Transport Type</Label>
+                    <Select value={formData.transportType} onValueChange={(v) => handleChange("transportType", v)}>
+                      <SelectTrigger className="text-sm w-[100%]">
+                        <SelectValue placeholder="Select Transport" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="None">None</SelectItem>
+                        <SelectItem value="Below 3KM">Below 3KM</SelectItem>
+                        <SelectItem value="3-5KM">3-5KM</SelectItem>
+                        <SelectItem value="5-10KM">5-10KM</SelectItem>
+                        <SelectItem value="Above 10KM">Above 10KM</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label className="text-sm">Registration Number</Label>
+                    <Input
+                      value={formData.regNo}
+                      placeholder="Regsitration No"
+                      onChange={(e) => handleChange("regNo", e.target.value)}
+                      required
+                      className="text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm">Admission Date *</Label>
+                    <Input
+                      type="date"
+                      value={formData.admissionDate}
+                      onChange={(e) => handleChange("admissionDate", e.target.value)}
+                      required
+                      className="text-sm"
+                    />
+                  </div>
                 </div>
               </div>
             )}
-
             {step === 2 && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="md:col-span-3">
-                  <Label className="text-sm">Address *</Label>
-                  <Input
-                    placeholder="House No, Street, Area"
-                    value={formData.address}
-                    onChange={(e) => handleChange("address", e.target.value)}
-                    required
-                    className="text-sm"
-                  />
+              <div className="space-y-6">
+                <div className="text-center mb-6">
+                  <h3 className="text-lg font-semibold text-primary mb-2">Admission Summary</h3>
+                  <p className="text-sm text-muted-foreground">Please review all the information before submitting</p>
                 </div>
-                <div>
-                  <Label className="text-sm">City *</Label>
-                  <Input
-                    value={formData.city}
-                    placeholder="City name"
-                    onChange={(e) => handleChange("city", e.target.value)}
-                    required
-                    className="text-sm"
-                  />
+
+                {/* Student Information Summary */}
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <h4 className="font-semibold text-blue-800 mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                    Student Information
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="font-medium text-gray-700">Full Name:</span>
+                      <span className="ml-2">{formData.studentName || "Not provided"}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Date of Birth:</span>
+                      <span className="ml-2">{formData.dob ? new Date(formData.dob).toLocaleDateString() : "Not provided"}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Gender:</span>
+                      <span className="ml-2">{formData.gender || "Not provided"}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Class:</span>
+                      <span className="ml-2">{formData.grade || "Not provided"}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Registration Number:</span>
+                      <span className="ml-2">{formData.regNo || "Not provided"}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Aadhaar Number:</span>
+                      <span className="ml-2">{formData.aadhaarNumber || "Not provided"}</span>
+                    </div>
+                    <div className="md:col-span-2">
+                      <span className="font-medium text-gray-700">Student Photo:</span>
+                      <span className="ml-2">{formData.studentPhotoBase64 ? "✓ Uploaded" : "Not uploaded"}</span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-sm">State *</Label>
-                  <Input
-                    value={formData.state}
-                    placeholder="State name"
-                    onChange={(e) => handleChange("state", e.target.value)}
-                    required
-                    className="text-sm"
-                  />
+
+                {/* Parent Information Summary */}
+                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                  <h4 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    Parent Information & Address
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="font-medium text-gray-700">Father's Name:</span>
+                      <span className="ml-2">{formData.fatherName || "Not provided"}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Mother's Name:</span>
+                      <span className="ml-2">{formData.motherName || "Not provided"}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Phone Number:</span>
+                      <span className="ml-2">{formData.phone || "Not provided"}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Email Address:</span>
+                      <span className="ml-2">{formData.email || "Not provided"}</span>
+                    </div>
+                    <div className="md:col-span-2">
+                      <span className="font-medium text-gray-700">Address:</span>
+                      <span className="ml-2">{formData.address || "Not provided"}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">City:</span>
+                      <span className="ml-2">{formData.city || "Not provided"}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">State:</span>
+                      <span className="ml-2">{formData.state || "Not provided"}</span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-sm">Admission Date *</Label>
-                  <Input
-                    type="date"
-                    value={formData.admissionDate}
-                    onChange={(e) => handleChange("admissionDate", e.target.value)}
-                    required
-                    className="text-sm"
-                  />
+
+                {/* Admission Details Summary */}
+                <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                  <h4 className="font-semibold text-purple-800 mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                    Admission Details
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="font-medium text-gray-700">Admission Date:</span>
+                      <span className="ml-2">{formData.admissionDate ? new Date(formData.admissionDate).toLocaleDateString() : "Not provided"}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Section:</span>
+                      <span className="ml-2">{formData.section}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Academic Year:</span>
+                      <span className="ml-2">{formData.academicYear}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Transport Type:</span>
+                      <span className="ml-2">{formData.transportType}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Fee Breakdown Summary */}
+                {feeBreakdown && (
+                  <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+                    <h4 className="font-semibold text-indigo-800 mb-3 flex items-center gap-2">
+                      <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
+                      Fee Structure & Monthly Breakdown
+                    </h4>
+                    
+                    {/* Class Fee Information */}
+                    <div className="mb-4 p-3 bg-white rounded-md border border-indigo-100">
+                      <h5 className="font-medium text-indigo-700 mb-2">Class Fee Information</h5>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                        <div>
+                          <span className="font-medium text-gray-600">Class:</span>
+                          <span className="ml-2 text-gray-800">{formData.grade}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-600">Tuition Fee:</span>
+                          <span className="ml-2 text-gray-800">₹{feeBreakdown.classInfo.tuitionFee.toLocaleString()}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-600">Admission Fee:</span>
+                          <span className="ml-2 text-gray-800">₹{feeBreakdown.classInfo.admissionFee.toLocaleString()}</span>
+                        </div>
+                        {formData.transportType !== "None" && (
+                          <div className="md:col-span-3">
+                            <span className="font-medium text-gray-600">Transport Fee ({formData.transportType}):</span>
+                            <span className="ml-2 text-gray-800">₹{feeBreakdown.monthlyFees[0].transportFee.toLocaleString()}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Monthly Fee Breakdown */}
+                    <div className="mb-4">
+                      <h5 className="font-medium text-indigo-700 mb-3">Monthly Fee Breakdown (April 2025 - March 2026)</h5>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {feeBreakdown.monthlyFees.map((fee, index) => (
+                          <div key={index} className="bg-white p-3 rounded-md border border-indigo-100 text-sm">
+                            <div className="font-medium text-indigo-600 mb-1">{fee.month} {fee.year}</div>
+                            <div className="space-y-1 text-xs">
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Tuition:</span>
+                                <span className="text-gray-800">₹{fee.tuitionFee.toLocaleString()}</span>
+                              </div>
+                              {fee.admissionFee > 0 && (
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Admission:</span>
+                                  <span className="text-gray-800">₹{fee.admissionFee.toLocaleString()}</span>
+                                </div>
+                              )}
+                              {fee.transportFee > 0 && (
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Transport:</span>
+                                  <span className="text-gray-800">₹{fee.transportFee.toLocaleString()}</span>
+                                </div>
+                              )}
+                              <div className="flex justify-between font-medium border-t pt-1">
+                                <span className="text-indigo-600">Total:</span>
+                                <span className="text-indigo-800">₹{fee.totalAmount.toLocaleString()}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Annual Total */}
+                    <div className="bg-indigo-100 p-3 rounded-md border border-indigo-200">
+                      <div className="flex justify-between items-center">
+                        <span className="font-semibold text-indigo-800">Total Annual Fee:</span>
+                        <span className="font-bold text-lg text-indigo-900">₹{feeBreakdown.totalAnnualFee.toLocaleString()}</span>
+                      </div>
+                      <p className="text-xs text-indigo-600 mt-1">
+                        * Admission fee is charged only once in April. Transport fee applies to all months if selected.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Validation Summary */}
+                <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                  <h4 className="font-semibold text-amber-800 mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
+                    Required Fields Check
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    {[
+                      { field: "Student Name", value: formData.studentName, required: true },
+                      { field: "Date of Birth", value: formData.dob, required: true },
+                      { field: "Gender", value: formData.gender, required: true },
+                      { field: "Class", value: formData.grade, required: true },
+                      { field: "Father's Name", value: formData.fatherName, required: true },
+                      { field: "Mother's Name", value: formData.motherName, required: true },
+                      { field: "Phone Number", value: formData.phone, required: true },
+                      { field: "Address", value: formData.address, required: true },
+                      { field: "City", value: formData.city, required: true },
+                      { field: "State", value: formData.state, required: true },
+                      { field: "Admission Date", value: formData.admissionDate, required: true },
+                    ].map((item) => (
+                      <div key={item.field} className="flex items-center gap-2">
+                        {item.value ? (
+                          <span className="text-green-600">✓</span>
+                        ) : (
+                          <span className="text-red-600">✗</span>
+                        )}
+                        <span className={item.value ? "text-gray-700" : "text-red-600"}>
+                          {item.field} {item.required && "(Required)"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}

@@ -151,6 +151,7 @@ export async function POST(req: Request) {
       motherName: rawBody.motherName,
       aadhaarNumber: rawBody.aadhaarNumber,
       studentPhotoBase64: rawBody.studentPhotoBase64,
+      regNo: rawBody.regNo || "", // Registration Number field
       admissionDate: rawBody.admissionDate,
       classEnrolled: rawBody.classEnrolled || rawBody.grade, // Accept both
       section: rawBody.section || "", // Default to empty string if not provided
@@ -190,6 +191,7 @@ export async function POST(req: Request) {
         motherName: body.motherName,
         aadhaarNumber: body.aadhaarNumber,
         studentPhotoBase64: body.studentPhotoBase64,
+        regNo: body.regNo, // Registration Number field
       },
     });
 

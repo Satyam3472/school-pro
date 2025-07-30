@@ -36,30 +36,6 @@ export const AppSidebar = React.memo(function AppSidebar({ ...props }: React.Com
   const { schoolData: data, loading, error } = useSchoolData();
   const pathname = usePathname();
 
-  // Show loading state on server side to prevent hydration mismatch
-  if (typeof window === 'undefined' || loading) {
-    return (
-      <Sidebar variant="floating" {...props}>
-        <SidebarHeader>
-          <div className="flex items-center gap-3 p-4">
-            <div className="animate-pulse bg-gray-200 rounded-lg w-12 h-12"></div>
-            <div className="space-y-2">
-              <div className="animate-pulse bg-gray-200 rounded h-4 w-24"></div>
-              <div className="animate-pulse bg-gray-200 rounded h-3 w-16"></div>
-            </div>
-          </div>
-        </SidebarHeader>
-        <SidebarContent>
-          <div className="p-4 space-y-2">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="animate-pulse bg-gray-200 rounded h-8"></div>
-            ))}
-          </div>
-        </SidebarContent>
-      </Sidebar>
-    );
-  }
-
   // Memoize menu items to prevent unnecessary re-renders
   const menuItems = useMemo(() => [
     {
@@ -95,6 +71,30 @@ export const AppSidebar = React.memo(function AppSidebar({ ...props }: React.Com
     }
     return false;
   };
+
+  // Show loading state on server side to prevent hydration mismatch
+  if (typeof window === 'undefined' || loading) {
+    return (
+      <Sidebar variant="floating" {...props}>
+        <SidebarHeader>
+          <div className="flex items-center gap-3 p-4">
+            <div className="animate-pulse bg-gray-200 rounded-lg w-12 h-12"></div>
+            <div className="space-y-2">
+              <div className="animate-pulse bg-gray-200 rounded h-4 w-24"></div>
+              <div className="animate-pulse bg-gray-200 rounded h-3 w-16"></div>
+            </div>
+          </div>
+        </SidebarHeader>
+        <SidebarContent>
+          <div className="p-4 space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse bg-gray-200 rounded h-8"></div>
+            ))}
+          </div>
+        </SidebarContent>
+      </Sidebar>
+    );
+  }
 
   if (error || !data) {
     return (
@@ -198,7 +198,7 @@ export const AppSidebar = React.memo(function AppSidebar({ ...props }: React.Com
         <Button
           variant="outline"
           size="sm"
-          className="gap-1.5 w-full justify-start hover:bg-accent/50 transition-colors"
+          className="gap-1.5 w-full justify-center hover:bg-accent/50 transition-colors"
           asChild
         >
           <Link href="/dashboard/settings">

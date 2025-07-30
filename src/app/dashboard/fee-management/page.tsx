@@ -25,7 +25,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
-import { Calendar, DollarSign, User, AlertCircle, CheckCircle, Clock, Plus, Search, Filter } from "lucide-react"
+import { Calendar, DollarSign, User, AlertCircle, CheckCircle, Clock, Plus, Search, Filter, FileText } from "lucide-react"
 import { useDashboardNav } from "../layout"
 
 interface Student {
@@ -264,6 +264,11 @@ export default function FeeManagementPage() {
   const handlePayment = async (monthlyFee: MonthlyFee) => {
     setSelectedMonth(monthlyFee)
     setIsPaymentModalOpen(true)
+  }
+
+  const handleInvoice = async (fee: MonthlyFee) => {
+    // Navigate to the invoice page in the same window
+    window.location.href = `/invoice/${fee.id}`
   }
 
   const processPayment = async (e: React.FormEvent) => {
@@ -661,17 +666,18 @@ export default function FeeManagementPage() {
           {/* Desktop Table View */}
           <div className="hidden md:block overflow-x-auto">
             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Student</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Month/Year</TableHead>
-                  <TableHead>Due Date</TableHead>
-                  <TableHead>Paid Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Remarks</TableHead>
-                </TableRow>
-              </TableHeader>
+                              <TableHeader>
+                  <TableRow>
+                    <TableHead>Student</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Month/Year</TableHead>
+                    <TableHead>Due Date</TableHead>
+                    <TableHead>Paid Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Remarks</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
               <TableBody>
                 {filteredFees.length === 0 ? (
                   <TableRow>
@@ -711,10 +717,21 @@ export default function FeeManagementPage() {
                           {fee.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="max-w-xs truncate">
-                        {fee.remarks || "-"}
-                      </TableCell>
-                    </TableRow>
+                                          <TableCell className="max-w-xs truncate">
+                      {fee.remarks || "-"}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleInvoice(fee)}
+                        className="flex items-center gap-1"
+                      >
+                        <FileText className="h-3 w-3" />
+                        Invoice
+                      </Button>
+                    </TableCell>
+                  </TableRow>
                   ))
                 )}
               </TableBody>
@@ -777,6 +794,17 @@ export default function FeeManagementPage() {
                         <span className="ml-2 text-sm">{fee.remarks}</span>
                       </div>
                     )}
+                    <div className="col-span-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleInvoice(fee)}
+                        className="flex items-center gap-1 w-full"
+                      >
+                        <FileText className="h-3 w-3" />
+                        View Invoice
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))
@@ -858,16 +886,27 @@ export default function FeeManagementPage() {
                             }
                           </TableCell>
                           <TableCell>
-                            {fee.status !== 'PAID' && (
+                            <div className="flex flex-col gap-1">
+                              {fee.status !== 'PAID' && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handlePayment(fee)}
+                                  className="flex items-center gap-1"
+                                >
+                                  <CheckCircle className="h-3 w-3" />
+                                  Mark Paid
+                                </Button>
+                              )}
                               <Button
                                 size="sm"
-                                onClick={() => handlePayment(fee)}
+                                variant="outline"
+                                onClick={() => handleInvoice(fee)}
                                 className="flex items-center gap-1"
                               >
-                                <CheckCircle className="h-3 w-3" />
-                                Mark Paid
+                                <FileText className="h-3 w-3" />
+                                Invoice
                               </Button>
-                            )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -908,7 +947,7 @@ export default function FeeManagementPage() {
                             }
                           </span>
                         </div>
-                        <div>
+                        <div className="flex flex-col gap-2">
                           {fee.status !== 'PAID' && (
                             <Button
                               size="sm"
@@ -919,6 +958,15 @@ export default function FeeManagementPage() {
                               Mark Paid
                             </Button>
                           )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleInvoice(fee)}
+                            className="flex items-center gap-1 w-full"
+                          >
+                            <FileText className="h-3 w-3" />
+                            View Invoice
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -1091,6 +1139,8 @@ export default function FeeManagementPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+
     </div>
   )
 } 

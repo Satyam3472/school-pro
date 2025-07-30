@@ -377,21 +377,21 @@ export default function FeeManagementPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto p-4">
+    <div className="space-y-4 md:space-y-6 max-w-7xl mx-auto p-3 md:p-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight mt-2">Fee Management</h1>
-          <p className="text-muted-foreground">Manage student fees and payments</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Fee Management</h1>
+          <p className="text-muted-foreground text-sm md:text-base">Manage student fees and payments</p>
         </div>
-        <Button onClick={() => setIsAddFeeModalOpen(true)} className="flex items-center gap-2">
+        <Button onClick={() => setIsAddFeeModalOpen(true)} className="flex items-center gap-2 w-full sm:w-auto">
           <Plus className="h-4 w-4" />
           Add New Fee
         </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {[
           {
             title: "Total Students",
@@ -425,20 +425,20 @@ export default function FeeManagementPage() {
           <div
             key={index}
             className={`
-              flex items-center justify-between gap-4 px-4 py-3 rounded-lg shadow-sm
+              flex items-center justify-between gap-3 md:gap-4 px-3 md:px-4 py-3 rounded-lg shadow-sm
               bg-gradient-to-br from-${stat.color}-50 to-white dark:from-${stat.color}-950 dark:to-zinc-900
               border-l-4 border-${stat.color}-500
               hover:shadow-md transition-shadow duration-200
             `}
           >
-            <div className="flex-1">
-              <h4 className="text-sm font-medium text-muted-foreground">{stat.title}</h4>
-              <div className={`text-lg font-semibold text-${stat.color}-700 dark:text-${stat.color}-300`}>
+            <div className="flex-1 min-w-0">
+              <h4 className="text-xs md:text-sm font-medium text-muted-foreground truncate">{stat.title}</h4>
+              <div className={`text-base md:text-lg font-semibold text-${stat.color}-700 dark:text-${stat.color}-300 truncate`}>
                 {stat.value}
               </div>
-              <p className="text-xs text-muted-foreground">{stat.subtitle}</p>
+              <p className="text-xs text-muted-foreground truncate">{stat.subtitle}</p>
             </div>
-            <div className="bg-white dark:bg-zinc-800/30 p-2 rounded-md shadow-inner">
+            <div className="bg-white dark:bg-zinc-800/30 p-1.5 md:p-2 rounded-md shadow-inner flex-shrink-0">
               {stat.icon}
             </div>
           </div>
@@ -447,12 +447,12 @@ export default function FeeManagementPage() {
 
       <Card>
         <CardHeader className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <CardTitle className="flex items-center gap-2 text-lg font-semibold">
               <User className="h-5 w-5 text-primary" />
               Student Fee Status
             </CardTitle>
-            <div className="flex flex-wrap gap-3 md:gap-4 items-end justify-end">
+            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
               {/* Search */}
               <div className="relative w-full sm:w-56">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -496,64 +496,113 @@ export default function FeeManagementPage() {
           </div>
         </CardHeader>
 
-        <CardContent className="p-0 overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Student Name</TableHead>
-                <TableHead>Father's Name</TableHead>
-                <TableHead>Class</TableHead>
-                <TableHead>Section</TableHead>
-                <TableHead>Admission Date</TableHead>
-                <TableHead>Pending Months</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredStudents.length === 0 ? (
+        <CardContent className="p-0">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8">
-                    <div className="text-muted-foreground">
-                      <User className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p>No students found</p>
-                    </div>
-                  </TableCell>
+                  <TableHead>Student Name</TableHead>
+                  <TableHead>Father's Name</TableHead>
+                  <TableHead>Class</TableHead>
+                  <TableHead>Section</TableHead>
+                  <TableHead>Admission Date</TableHead>
+                  <TableHead>Pending Months</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ) : (
-                filteredStudents.map((student) => {
-                  const pendingMonths = getPendingFeesCount(student)
-                  return (
-                    <TableRow key={student.id} className="hover:bg-muted/50">
-                      <TableCell>
+              </TableHeader>
+              <TableBody>
+                {filteredStudents.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8">
+                      <div className="text-muted-foreground">
+                        <User className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        <p>No students found</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredStudents.map((student) => {
+                    const pendingMonths = getPendingFeesCount(student)
+                    return (
+                      <TableRow key={student.id} className="hover:bg-muted/50">
+                        <TableCell>
+                          <button
+                            onClick={() => handleStudentClick(student)}
+                            className="font-medium text-primary hover:underline"
+                          >
+                            {student.studentName}
+                          </button>
+                        </TableCell>
+                        <TableCell>{student.fatherName || "-"}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{student.admission?.classEnrolled || "-"}</Badge>
+                        </TableCell>
+                        <TableCell>{student.admission?.section || "-"}</TableCell>
+                        <TableCell>
+                          {student.admission?.admissionDate
+                            ? new Date(student.admission.admissionDate).toLocaleDateString()
+                            : "-"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={pendingMonths > 0 ? "destructive" : "secondary"}>
+                            {pendingMonths} months
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={pendingMonths > 0 ? "destructive" : "default"}>
+                            {pendingMonths > 0 ? "Pending" : "Paid"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            onClick={() => handleStudentClick(student)}
+                            className="flex items-center gap-1"
+                          >
+                            <Calendar className="h-3 w-3" />
+                            Details
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3 p-4">
+            {filteredStudents.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-muted-foreground">
+                  <User className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>No students found</p>
+                </div>
+              </div>
+            ) : (
+              filteredStudents.map((student) => {
+                const pendingMonths = getPendingFeesCount(student)
+                return (
+                  <div key={student.id} className="border rounded-lg p-4 space-y-3 hover:bg-muted/30 transition-colors">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
                         <button
                           onClick={() => handleStudentClick(student)}
-                          className="font-medium text-primary hover:underline"
+                          className="font-medium text-primary hover:underline text-left"
                         >
                           {student.studentName}
                         </button>
-                      </TableCell>
-                      <TableCell>{student.fatherName || "-"}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{student.admission?.classEnrolled || "-"}</Badge>
-                      </TableCell>
-                      <TableCell>{student.admission?.section || "-"}</TableCell>
-                      <TableCell>
-                        {student.admission?.admissionDate
-                          ? new Date(student.admission.admissionDate).toLocaleDateString()
-                          : "-"}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={pendingMonths > 0 ? "destructive" : "secondary"}>
-                          {pendingMonths} months
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Father: {student.fatherName || "N/A"}
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
                         <Badge variant={pendingMonths > 0 ? "destructive" : "default"}>
                           {pendingMonths > 0 ? "Pending" : "Paid"}
                         </Badge>
-                      </TableCell>
-                      <TableCell>
                         <Button
                           size="sm"
                           onClick={() => handleStudentClick(student)}
@@ -562,13 +611,40 @@ export default function FeeManagementPage() {
                           <Calendar className="h-3 w-3" />
                           Details
                         </Button>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })
-              )}
-            </TableBody>
-          </Table>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Class:</span>
+                        <Badge variant="outline" className="ml-2">
+                          {student.admission?.classEnrolled || "-"}
+                        </Badge>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Section:</span>
+                        <span className="ml-2">{student.admission?.section || "-"}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Admission:</span>
+                        <span className="ml-2">
+                          {student.admission?.admissionDate
+                            ? new Date(student.admission.admissionDate).toLocaleDateString()
+                            : "-"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Pending:</span>
+                        <Badge variant={pendingMonths > 0 ? "destructive" : "secondary"} className="ml-2">
+                          {pendingMonths} months
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -581,49 +657,92 @@ export default function FeeManagementPage() {
             Fee Payment Records
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Student</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Month/Year</TableHead>
-                <TableHead>Due Date</TableHead>
-                <TableHead>Paid Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Remarks</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredFees.length === 0 ? (
+        <CardContent className="p-0">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
-                    <div className="text-muted-foreground">
-                      <DollarSign className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p>No fee records found</p>
-                    </div>
-                  </TableCell>
+                  <TableHead>Student</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Month/Year</TableHead>
+                  <TableHead>Due Date</TableHead>
+                  <TableHead>Paid Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Remarks</TableHead>
                 </TableRow>
-              ) : (
-                filteredFees.map((fee) => (
-                  <TableRow key={fee.id} className="hover:bg-muted/50">
-                    <TableCell className="font-medium">
-                      {students.find(s => s.id === fee.studentId)?.studentName || `Student ${fee.studentId}`}
+              </TableHeader>
+              <TableBody>
+                {filteredFees.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      <div className="text-muted-foreground">
+                        <DollarSign className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        <p>No fee records found</p>
+                      </div>
                     </TableCell>
-                    <TableCell>₹{Number(fee.totalAmount)}</TableCell>
-                    <TableCell>
-                      {getMonthName(fee.month)} {fee.year}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(fee.dueDate).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      {fee.paidDate 
-                        ? new Date(fee.paidDate).toLocaleDateString()
-                        : "-"
-                      }
-                    </TableCell>
-                    <TableCell>
+                  </TableRow>
+                ) : (
+                  filteredFees.map((fee) => (
+                    <TableRow key={fee.id} className="hover:bg-muted/50">
+                      <TableCell className="font-medium">
+                        {students.find(s => s.id === fee.studentId)?.studentName || `Student ${fee.studentId}`}
+                      </TableCell>
+                      <TableCell>₹{Number(fee.totalAmount)}</TableCell>
+                      <TableCell>
+                        {getMonthName(fee.month)} {fee.year}
+                      </TableCell>
+                      <TableCell>
+                        {new Date(fee.dueDate).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        {fee.paidDate 
+                          ? new Date(fee.paidDate).toLocaleDateString()
+                          : "-"
+                        }
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={
+                            fee.status === 'PAID' ? 'default' : 
+                            fee.status === 'PARTIALLY_PAID' ? 'secondary' : 'destructive'
+                          }
+                        >
+                          {fee.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">
+                        {fee.remarks || "-"}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3 p-4">
+            {filteredFees.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-muted-foreground">
+                  <DollarSign className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>No fee records found</p>
+                </div>
+              </div>
+            ) : (
+              filteredFees.map((fee) => (
+                <div key={fee.id} className="border rounded-lg p-4 space-y-3 hover:bg-muted/30 transition-colors">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium">
+                        {students.find(s => s.id === fee.studentId)?.studentName || `Student ${fee.studentId}`}
+                      </h4>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {getMonthName(fee.month)} {fee.year}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
                       <Badge 
                         variant={
                           fee.status === 'PAID' ? 'default' : 
@@ -632,31 +751,53 @@ export default function FeeManagementPage() {
                       >
                         {fee.status}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="max-w-xs truncate">
-                      {fee.remarks || "-"}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                      <div className="text-lg font-semibold text-green-600">
+                        ₹{Number(fee.totalAmount)}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Due Date:</span>
+                      <span className="ml-2">{new Date(fee.dueDate).toLocaleDateString()}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Paid Date:</span>
+                      <span className="ml-2">
+                        {fee.paidDate 
+                          ? new Date(fee.paidDate).toLocaleDateString()
+                          : "-"
+                        }
+                      </span>
+                    </div>
+                    {fee.remarks && (
+                      <div className="col-span-2">
+                        <span className="text-muted-foreground">Remarks:</span>
+                        <span className="ml-2 text-sm">{fee.remarks}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </CardContent>
       </Card>
 
       {/* Fee Details Modal */}
       <Dialog open={isFeeModalOpen} onOpenChange={setIsFeeModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] md:w-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-lg md:text-xl">
               <Calendar className="h-5 w-5" />
               Fee Details - {selectedStudent?.studentName}
             </DialogTitle>
           </DialogHeader>
           {feeDetails && (
-            <div className="space-y-6">
+            <div className="space-y-4 md:space-y-6">
               {/* Student Info */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 p-3 md:p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border">
                 <div>
                   <p className="text-sm text-muted-foreground">Class</p>
                   <p className="font-medium">{feeDetails.student.admission?.classEnrolled}</p>
@@ -681,54 +822,108 @@ export default function FeeManagementPage() {
                   <DollarSign className="h-4 w-4" />
                   Monthly Fee Details
                 </h3>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Month</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Due Date</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Paid Date</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {feeDetails.monthlyFees.map((fee) => (
-                      <TableRow key={fee.id}>
-                        <TableCell className="font-medium">
-                          {getMonthName(fee.month)} {fee.year}
-                        </TableCell>
-                        <TableCell>₹{fee.totalAmount}</TableCell>
-                        <TableCell>
-                          {new Date(fee.dueDate).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
+                
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Month</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Due Date</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Paid Date</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {feeDetails.monthlyFees.map((fee) => (
+                        <TableRow key={fee.id}>
+                          <TableCell className="font-medium">
+                            {getMonthName(fee.month)} {fee.year}
+                          </TableCell>
+                          <TableCell>₹{fee.totalAmount}</TableCell>
+                          <TableCell>
+                            {new Date(fee.dueDate).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={fee.status === 'PAID' ? "default" : "destructive"}>
+                              {fee.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {fee.paidDate 
+                              ? new Date(fee.paidDate).toLocaleDateString()
+                              : "-"
+                            }
+                          </TableCell>
+                          <TableCell>
+                            {fee.status !== 'PAID' && (
+                              <Button
+                                size="sm"
+                                onClick={() => handlePayment(fee)}
+                                className="flex items-center gap-1"
+                              >
+                                <CheckCircle className="h-3 w-3" />
+                                Mark Paid
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-3">
+                  {feeDetails.monthlyFees.map((fee) => (
+                    <div key={fee.id} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium">
+                            {getMonthName(fee.month)} {fee.year}
+                          </h4>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Due: {new Date(fee.dueDate).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
                           <Badge variant={fee.status === 'PAID' ? "default" : "destructive"}>
                             {fee.status}
                           </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {fee.paidDate 
-                            ? new Date(fee.paidDate).toLocaleDateString()
-                            : "-"
-                          }
-                        </TableCell>
-                        <TableCell>
+                          <div className="text-lg font-semibold text-green-600">
+                            ₹{fee.totalAmount}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Paid Date:</span>
+                          <span className="ml-2">
+                            {fee.paidDate 
+                              ? new Date(fee.paidDate).toLocaleDateString()
+                              : "-"
+                            }
+                          </span>
+                        </div>
+                        <div>
                           {fee.status !== 'PAID' && (
                             <Button
                               size="sm"
                               onClick={() => handlePayment(fee)}
-                              className="flex items-center gap-1"
+                              className="flex items-center gap-1 w-full"
                             >
                               <CheckCircle className="h-3 w-3" />
                               Mark Paid
                             </Button>
                           )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -737,9 +932,9 @@ export default function FeeManagementPage() {
 
       {/* Payment Modal */}
       <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
-        <DialogContent>
+        <DialogContent className="w-[95vw] md:w-auto max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-lg md:text-xl">
               <CheckCircle className="h-5 w-5" />
               Mark Payment
             </DialogTitle>

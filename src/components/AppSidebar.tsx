@@ -5,10 +5,13 @@ import {
   Users,
   BadgeIndianRupee,
   Settings,
+  Menu,
+  X,
 } from "lucide-react"
 
 import Image from "next/image"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import {
   Sidebar,
   SidebarContent,
@@ -21,14 +24,17 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { NavUser } from "./nav-user"
 import { Button } from "./ui/button"
 import { useSchoolData } from "@/app/dashboard/layout"
 import { useMemo } from "react"
+import { cn } from "@/lib/utils"
 
 export const AppSidebar = React.memo(function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { schoolData: data, loading, error } = useSchoolData();
+  const pathname = usePathname();
 
   // Show loading state on server side to prevent hydration mismatch
   if (typeof window === 'undefined' || loading) {
@@ -81,6 +87,15 @@ export const AppSidebar = React.memo(function AppSidebar({ ...props }: React.Com
     },
   ], []);
 
+  // Check if current path matches menu item or sub-item
+  const isActivePath = (itemUrl: string, subItems?: { url: string }[]) => {
+    if (pathname === itemUrl) return true;
+    if (subItems) {
+      return subItems.some(subItem => pathname === subItem.url);
+    }
+    return false;
+  };
+
   if (error || !data) {
     return (
       <Sidebar variant="floating" {...props}>
@@ -98,18 +113,14 @@ export const AppSidebar = React.memo(function AppSidebar({ ...props }: React.Com
     );
   }
 
-  console.log('Settings data:', data);
-  console.log('Logo base64:', data.logoBase64);
-  console.log('Admin image base64:', data.adminImageBase64);
-
   return (
     <Sidebar variant="floating" {...props}>
-      <SidebarHeader>
+      <SidebarHeader className="border-b border-border/40">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
+            <SidebarMenuButton size="lg" asChild className="hover:bg-accent/50 transition-colors">
               <Link href="/">
-                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg shadow-sm">
                   {data.logoBase64 ? (
                     <img
                       src={data.logoBase64}
@@ -132,7 +143,7 @@ export const AppSidebar = React.memo(function AppSidebar({ ...props }: React.Com
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
                   <span className="font-bold text-lg">{data.schoolName?.toUpperCase()}</span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-muted-foreground hidden lg:block">
                     {data.slogan}
                   </span>
                 </div>
@@ -142,23 +153,35 @@ export const AppSidebar = React.memo(function AppSidebar({ ...props }: React.Com
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="px-2 py-4">
         <SidebarGroup>
-          <SidebarMenu className="gap-2">
+          <SidebarMenu className="gap-1">
             {menuItems.map((item) => (
               <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild>
-                  <Link href={item.url} className="font-medium flex items-center">
+                <SidebarMenuButton 
+                  asChild 
+                  className={cn(
+                    "font-medium flex items-center transition-all duration-200 hover:bg-accent/50 hover:scale-[1.02]",
+                    isActivePath(item.url, item.items) && "bg-accent text-accent-foreground shadow-sm"
+                  )}
+                >
+                  <Link href={item.url}>
                     {item.icon}
-                    {item.title}
+                    <span className="truncate">{item.title}</span>
                   </Link>
                 </SidebarMenuButton>
 
                 {item.items?.length ? (
-                  <SidebarMenuSub className="ml-0 border-l-0 px-1.5">
+                  <SidebarMenuSub className="ml-0 border-l-0 px-1.5 space-y-1">
                     {item.items.map((subItem) => (
                       <SidebarMenuSubItem key={subItem.title}>
-                        <SidebarMenuSubButton asChild>
+                        <SidebarMenuSubButton 
+                          asChild
+                          className={cn(
+                            "transition-all duration-200 hover:bg-accent/30 hover:scale-[1.01] text-sm",
+                            pathname === subItem.url && "bg-accent/20 text-accent-foreground font-medium"
+                          )}
+                        >
                           <Link href={subItem.url}>{subItem.title}</Link>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
@@ -171,16 +194,16 @@ export const AppSidebar = React.memo(function AppSidebar({ ...props }: React.Com
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="border-t border-border/40 p-4 space-y-3">
         <Button
           variant="outline"
           size="sm"
-          className="gap-1.5"
+          className="gap-1.5 w-full justify-start hover:bg-accent/50 transition-colors"
           asChild
         >
           <Link href="/dashboard/settings">
             <Settings className="w-3.5 h-3.5" />
-            <span>Settings</span>
+            <span className="truncate">Settings</span>
           </Link>
         </Button>
         <NavUser

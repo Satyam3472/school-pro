@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { useSidebarClose } from "@/hooks/useSidebarClose";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -56,6 +57,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Use the sidebar close hook for mobile navigation
+  useSidebarClose();
+
   // Fetch school data once when layout mounts
   useEffect(() => {
     const fetchSchoolData = async () => {
@@ -99,30 +103,36 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <SidebarInset>
           <div className="flex-1">
             {/* Shared Dashboard Header */}
-            <header className="flex h-16 shrink-0 items-center gap-2 px-4 sticky top-0 z-20 bg-background/80 backdrop-blur-sm">
-              <SidebarTrigger className="-ml-1" />
+            <header className="flex h-16 shrink-0 items-center gap-2 px-4 sticky top-0 z-20 bg-background/80 backdrop-blur-sm border-b border-border/40">
+              <SidebarTrigger className="-ml-1 lg:hidden" data-sidebar-trigger />
               <Separator
                 orientation="vertical"
-                className="mr-2 data-[orientation=vertical]:h-4"
+                className="mr-2 data-[orientation=vertical]:h-4 hidden lg:block"
               />
-              <Breadcrumb>
-                <BreadcrumbList>
-                  {breadcrumb.map((item, idx) => (
-                    <React.Fragment key={item.label}>
-                      <BreadcrumbItem className={idx === 0 ? "hidden md:block" : undefined}>
-                        {item.href ? (
-                          <BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
-                        ) : (
-                          <BreadcrumbPage>{item.label}</BreadcrumbPage>
-                        )}
-                      </BreadcrumbItem>
-                      {idx < breadcrumb.length - 1 && <BreadcrumbSeparator className="hidden md:block" />}
-                    </React.Fragment>
-                  ))}
-                </BreadcrumbList>
-              </Breadcrumb>
+              <div className="flex-1 min-w-0">
+                <Breadcrumb>
+                  <BreadcrumbList>
+                    {breadcrumb.map((item, idx) => (
+                      <React.Fragment key={item.label}>
+                        <BreadcrumbItem className={idx === 0 ? "hidden lg:block" : undefined}>
+                          {item.href ? (
+                            <BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
+                          ) : (
+                            <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                          )}
+                        </BreadcrumbItem>
+                        {idx < breadcrumb.length - 1 && <BreadcrumbSeparator className="hidden lg:block" />}
+                      </React.Fragment>
+                    ))}
+                  </BreadcrumbList>
+                </Breadcrumb>
+                {/* Mobile page title */}
+                <div className="lg:hidden">
+                  <h1 className="text-lg font-semibold truncate">{pageTitle}</h1>
+                </div>
+              </div>
             </header>
-            <main>{children}</main>
+            <main className="min-h-[calc(100vh-4rem)] bg-background/50">{children}</main>
           </div>
         </SidebarInset>
       </SidebarProvider>

@@ -368,79 +368,79 @@ export default function AdmissionForm() {
             )}
 
             {step === 1 && (
-              <div>
+                <div>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="md:col-span-2">
                     <Label className="text-sm">Father's Name *</Label>
-                    <Input
-                      placeholder="Enter father's name"
-                      value={formData.fatherName}
-                      onChange={(e) => handleChange("fatherName", e.target.value)}
-                      required
-                      className="text-sm"
-                    />
-                  </div>
+                  <Input
+                    placeholder="Enter father's name"
+                    value={formData.fatherName}
+                    onChange={(e) => handleChange("fatherName", e.target.value)}
+                    required
+                    className="text-sm"
+                  />
+                </div>
                   <div className="md:col-span-2">
                     <Label className="text-sm">Mother's Name *</Label>
-                    <Input
-                      placeholder="Enter mother's name"
-                      value={formData.motherName}
-                      onChange={(e) => handleChange("motherName", e.target.value)}
-                      required
-                      className="text-sm"
-                    />
-                  </div>
+                  <Input
+                    placeholder="Enter mother's name"
+                    value={formData.motherName}
+                    onChange={(e) => handleChange("motherName", e.target.value)}
+                    required
+                    className="text-sm"
+                  />
+                </div>
                   <div className="md:col-span-2">
                     <Label className="text-sm">Phone Number *</Label>
-                    <Input
-                      type="tel"
-                      placeholder="+91 9876543210"
-                      value={formData.phone}
-                      onChange={(e) => handleChange("phone", e.target.value)}
-                      required
-                      className="text-sm"
-                    />
-                  </div>
+                  <Input
+                    type="tel"
+                    placeholder="+91 9876543210"
+                    value={formData.phone}
+                    onChange={(e) => handleChange("phone", e.target.value)}
+                    required
+                    className="text-sm"
+                  />
+                </div>
                   <div className="md:col-span-2">
-                    <Label className="text-sm">Email Address</Label>
-                    <Input
-                      type="email"
-                      placeholder="parent@example.com"
-                      value={formData.email}
-                      onChange={(e) => handleChange("email", e.target.value)}
-                      className="text-sm"
-                    />
-                  </div>
+                  <Label className="text-sm">Email Address</Label>
+                  <Input
+                    type="email"
+                    placeholder="parent@example.com"
+                    value={formData.email}
+                    onChange={(e) => handleChange("email", e.target.value)}
+                    className="text-sm"
+                  />
+                </div>
                   <div className="md:col-span-2">
                     <Label className="text-sm">Address *</Label>
-                    <Input
-                      placeholder="House No, Street, Area"
-                      value={formData.address}
-                      onChange={(e) => handleChange("address", e.target.value)}
-                      required
-                      className="text-sm"
-                    />
-                  </div>
-                  <div>
+                  <Input
+                    placeholder="House No, Street, Area"
+                    value={formData.address}
+                    onChange={(e) => handleChange("address", e.target.value)}
+                    required
+                    className="text-sm"
+                  />
+                </div>
+                <div>
                     <Label className="text-sm">City *</Label>
-                    <Input
-                      value={formData.city}
-                      placeholder="City name"
-                      onChange={(e) => handleChange("city", e.target.value)}
-                      required
-                      className="text-sm"
-                    />
-                  </div>
-                  <div>
+                  <Input
+                    value={formData.city}
+                    placeholder="City name"
+                    onChange={(e) => handleChange("city", e.target.value)}
+                    required
+                    className="text-sm"
+                  />
+                </div>
+                <div>
                     <Label className="text-sm">State *</Label>
-                    <Input
-                      value={formData.state}
-                      placeholder="State name"
-                      onChange={(e) => handleChange("state", e.target.value)}
-                      required
-                      className="text-sm"
-                    />
-                  </div>
+                  <Input
+                    value={formData.state}
+                    placeholder="State name"
+                    onChange={(e) => handleChange("state", e.target.value)}
+                    required
+                    className="text-sm"
+                  />
+                </div>
                   <div className="md:col-span-1">
                     <Label className="text-sm">Transport Type</Label>
                     <Select value={formData.transportType} onValueChange={(v) => handleChange("transportType", v)}>
@@ -466,15 +466,15 @@ export default function AdmissionForm() {
                       className="text-sm"
                     />
                   </div>
-                  <div>
+                <div>
                     <Label className="text-sm">Admission Date *</Label>
-                    <Input
-                      type="date"
-                      value={formData.admissionDate}
-                      onChange={(e) => handleChange("admissionDate", e.target.value)}
-                      required
-                      className="text-sm"
-                    />
+                  <Input
+                    type="date"
+                    value={formData.admissionDate}
+                    onChange={(e) => handleChange("admissionDate", e.target.value)}
+                    required
+                    className="text-sm"
+                  />
                   </div>
                 </div>
               </div>

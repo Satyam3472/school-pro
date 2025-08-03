@@ -49,13 +49,13 @@ const Invoice: FC<InvoiceProps> = ({
     }
 
     try {
-      // ✅ Dynamically import html2pdf only in the browser
+    // ✅ Dynamically import html2pdf only in the browser
       const html2pdf = (await import("html2pdf.js")).default;
 
-      const options = {
-        margin: 0.5,
+    const options = {
+      margin: 0.5,
         filename: `Fee_Receipt_${studentName.replace(/\s/g, "_")}_${receiptNo}.pdf`,
-        image: { type: "jpeg", quality: 0.98 },
+      image: { type: "jpeg", quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: "in" as const, format: "a4", orientation: "portrait" as const }
       };

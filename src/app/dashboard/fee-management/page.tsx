@@ -1,81 +1,25 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+import React, { useState, useEffect, useMemo, useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Textarea } from "@/components/ui/textarea"
-import { Calendar, DollarSign, User, AlertCircle, CheckCircle, Clock, Plus, Search, Filter, FileText } from "lucide-react"
+import { Plus, CheckCircle } from "lucide-react"
 import { useDashboardNav } from "../layout"
+import { useRouter } from "next/navigation"
 
-interface Student {
-  id: number
-  studentName: string
-  fatherName?: string
-  admission?: {
-    classEnrolled: string
-    section: string
-    admissionDate: string
-    academicYear: string
-  }
-}
+// Import components
+import StatsCards from "@/components/fee-management/StatsCards"
+import StudentFeeTable from "@/components/fee-management/StudentFeeTable"
+import FeeRecordsTable from "@/components/fee-management/FeeRecordsTable"
+import AddFeeModal from "@/components/fee-management/AddFeeModal"
+import FeeDetailsModal from "@/components/fee-management/FeeDetailsModal"
+import PaymentModal from "@/components/fee-management/PaymentModal"
+import { ErrorBoundary } from "@/components/ErrorBoundary"
 
-interface Fee {
-  id: number
-  studentId: number
-  amount: number
-  dueDate: string
-  paidDate?: string
-  status: 'PAID' | 'PENDING' | 'PARTIALLY_PAID'
-  remarks?: string
-  student?: Student
-}
-
-interface MonthlyFee {
-  id: number
-  studentId: number
-  month: number
-  year: number
-  tuitionFee: number
-  admissionFee: number
-  totalAmount: number
-  paidAmount: number
-  dueDate: string
-  paidDate?: string
-  status: 'PAID' | 'PENDING' | 'PARTIALLY_PAID'
-  remarks?: string
-}
-
-interface FeeDetails {
-  student: Student
-  monthlyFees: MonthlyFee[]
-  totalAmount: number
-  paidAmount: number
-  pendingAmount: number
-  pendingMonths: number
-}
+// Import types
+import { Student, Fee, MonthlyFee, FeeDetails, NewFee } from "@/types/fee-management"
 
 export default function FeeManagementPage() {
+  // State management
   const [students, setStudents] = useState<Student[]>([])
   const [fees, setFees] = useState<MonthlyFee[]>([])
   const [monthlyFees, setMonthlyFees] = useState<MonthlyFee[]>([])
@@ -86,39 +30,156 @@ export default function FeeManagementPage() {
   const [isAddFeeModalOpen, setIsAddFeeModalOpen] = useState(false)
   const [selectedMonth, setSelectedMonth] = useState<MonthlyFee | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isAddingFee, setIsAddingFee] = useState(false)
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false)
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false)
+  const [successMessage, setSuccessMessage] = useState("")
+  const [isFormAutoFilled, setIsFormAutoFilled] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterClass, setFilterClass] = useState("all")
   const [filterStatus, setFilterStatus] = useState("all")
+  const [schoolFeeStructure, setSchoolFeeStructure] = useState<{
+    classes: Array<{ name: string; tuitionFee: number; admissionFee: number }>;
+    transportFees: { below3: number; between3and5: number; between5and10: number; above10: number };
+  } | null>(null)
+  
   const { setBreadcrumb, setPageTitle } = useDashboardNav();
-
-  useEffect(() => {
-    setBreadcrumb([
-      { label: "Dashboard", href: "/dashboard" },
-      { label: "Fee Management" },
-    ]);
-    setPageTitle("Fee Management");
-  }, [setBreadcrumb, setPageTitle]);
+  const router = useRouter()
 
   // New fee form state
-  const [newFee, setNewFee] = useState({
+  const [newFee, setNewFee] = useState<NewFee>({
     studentId: "",
     amount: "",
     month: "",
     year: new Date().getFullYear().toString(),
-    transactionType: "TUITION_FEE",
+    transactionTypes: ["TUITION_FEE"],
     dueDate: "",
     remarks: ""
   })
 
-  const currentYear = new Date().getFullYear()
-  const currentMonth = new Date().getMonth() + 1
-
-  // Financial year starts from April (month 4)
-  const getFinancialYear = (date: Date) => {
-    const year = date.getFullYear()
-    const month = date.getMonth() + 1
-    return month >= 4 ? year : year - 1
+  // Utility functions
+  const getLastDateOfMonth = (year: number, month: number) => {
+    return new Date(year, month, 0).getDate()
   }
+
+  const getDefaultAmount = (studentId: string, transactionTypes: string[]): number => {
+    if (!studentId || !schoolFeeStructure) return 0
+    
+    const student = students.find(s => s.id.toString() === studentId)
+    
+    if (!student || !student.admission) {
+      return 0
+    }
+    
+    // Find the class in school fee structure
+    const classFee = schoolFeeStructure.classes.find(cls => cls.name === student.admission?.classEnrolled)
+    if (!classFee) {
+      return 0
+    }
+    
+    let totalAmount = 0
+    
+    // Calculate based on selected transaction types
+    transactionTypes.forEach(type => {
+      switch (type) {
+        case "TUITION_FEE":
+          totalAmount += classFee.tuitionFee
+          break
+        case "ADMISSION_FEE":
+          totalAmount += classFee.admissionFee
+          break
+        case "TRANSPORT_FEE":
+          if (student.admission?.transportType && student.admission.transportType !== "None") {
+            // Calculate transport fee based on distance
+            const transportFee = calculateTransportFee(student.admission.transportType)
+            totalAmount += transportFee
+          }
+          break
+        case "EXAM_FEE":
+          // Exam fee is typically 200-500, using 300 as default
+          totalAmount += 300
+          break
+        case "OTHER":
+          // Other fees default to 100
+          totalAmount += 100
+          break
+      }
+    })
+    
+    return totalAmount
+  }
+
+  const calculateTransportFee = (transportType: string): number => {
+    if (!schoolFeeStructure) return 0
+    
+    // Map transport type to distance ranges
+    const transportMap: { [key: string]: keyof typeof schoolFeeStructure.transportFees } = {
+      "Below 3 km": "below3",
+      "3-5 km": "between3and5", 
+      "5-10 km": "between5and10",
+      "Above 10 km": "above10"
+    }
+    
+    const feeKey = transportMap[transportType]
+    return feeKey ? schoolFeeStructure.transportFees[feeKey] : 0
+  }
+
+  const getDefaultTransactionTypes = (studentId: string, month: string) => {
+    if (!studentId || !month) return ["TUITION_FEE"]
+    
+    const student = students.find(s => s.id.toString() === studentId)
+    if (!student || !student.admission) return ["TUITION_FEE"]
+    
+    const monthNum = parseInt(month)
+    const transactionTypes = ["TUITION_FEE"]
+    
+    if (monthNum === 4) {
+      transactionTypes.push("ADMISSION_FEE")
+    }
+    
+    if ([6, 12].includes(monthNum)) {
+      transactionTypes.push("EXAM_FEE")
+    }
+    
+    if (student.admission.transportType && student.admission.transportType !== "None") {
+      transactionTypes.push("TRANSPORT_FEE")
+    }
+    
+    return transactionTypes
+  }
+
+  const autoFillForm = useCallback((studentId: string, month: string, year: string) => {
+    if (studentId && month && year) {
+      const monthNum = parseInt(month)
+      const yearNum = parseInt(year)
+      
+      // Validate inputs
+      if (isNaN(monthNum) || isNaN(yearNum) || monthNum < 1 || monthNum > 12) {
+        return
+      }
+      
+      const lastDate = getLastDateOfMonth(yearNum, monthNum)
+      const dueDate = `${yearNum}-${monthNum.toString().padStart(2, '0')}-${lastDate.toString().padStart(2, '0')}`
+      const defaultTransactionTypes = getDefaultTransactionTypes(studentId, month)
+      const defaultAmount = getDefaultAmount(studentId, defaultTransactionTypes)
+      
+      setNewFee(prev => ({
+        ...prev,
+        studentId,
+        month,
+        year,
+        amount: defaultAmount > 0 ? defaultAmount.toString() : "",
+        dueDate,
+        transactionTypes: defaultTransactionTypes
+      }))
+      
+      setIsFormAutoFilled(true)
+      const timeoutId = setTimeout(() => setIsFormAutoFilled(false), 3000)
+      
+      // Cleanup timeout on component unmount
+      return () => clearTimeout(timeoutId)
+    }
+  }, [])
 
   const getMonthName = (month: number) => {
     const months = [
@@ -139,18 +200,80 @@ export default function FeeManagementPage() {
     }
   }
 
+  // Close all modals function
+  const closeAllModals = () => {
+    setIsAddFeeModalOpen(false)
+    setIsPaymentModalOpen(false)
+    setIsFeeModalOpen(false)
+    setSelectedStudent(null)
+    setSelectedMonth(null)
+  }
+
+  // Effects
   useEffect(() => {
+    setBreadcrumb([
+      { label: "Dashboard", href: "/dashboard" },
+      { label: "Fee Management" },
+    ]);
+    setPageTitle("Fee Management");
+  }, [setBreadcrumb, setPageTitle]);
+
+  useEffect(() => {
+    fetchSchoolFeeStructure()
     fetchStudents()
     fetchFees()
     fetchAllMonthlyFees()
   }, [])
 
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closeAllModals()
+      }
+    }
+
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [])
+
+  // Cleanup effect for timeouts
+  useEffect(() => {
+    return () => {
+      // Cleanup any pending timeouts when component unmounts
+      setShowSuccessMessage(false)
+      setIsFormAutoFilled(false)
+    }
+  }, [])
+
+  // Data fetching functions
+  const fetchSchoolFeeStructure = async () => {
+    try {
+      const response = await fetch("/api/school-fees")
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      const result = await response.json()
+      if (result.success) {
+        setSchoolFeeStructure(result.data)
+      } else {
+        console.error("Error fetching school fee structure:", result.error)
+      }
+    } catch (error) {
+      console.error("Error fetching school fee structure:", error)
+    }
+  }
+
   const fetchStudents = async () => {
     try {
       const response = await fetch("/api/students")
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
       const result = await response.json()
       if (result.success) {
         setStudents(result.data)
+      } else {
+        console.error("Error fetching students:", result.error)
       }
     } catch (error) {
       console.error("Error fetching students:", error)
@@ -162,9 +285,14 @@ export default function FeeManagementPage() {
   const fetchFees = async () => {
     try {
       const response = await fetch("/api/monthly-fees")
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
       const result = await response.json()
       if (result.success) {
         setFees(result.data)
+      } else {
+        console.error("Error fetching fees:", result.error)
       }
     } catch (error) {
       console.error("Error fetching fees:", error)
@@ -174,69 +302,38 @@ export default function FeeManagementPage() {
   const fetchAllMonthlyFees = async () => {
     try {
       const response = await fetch("/api/monthly-fees")
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
       const result = await response.json()
       if (result.success) {
         setMonthlyFees(result.data)
+      } else {
+        console.error("Error fetching monthly fees:", result.error)
       }
     } catch (error) {
       console.error("Error fetching monthly fees:", error)
     }
   }
 
-  const getPendingFeesCount = (student: Student) => {
-    // Calculate pending months from April to current month
-    const currentDate = new Date()
-    const currentMonth = currentDate.getMonth() + 1 // 1-12
-    const currentYear = currentDate.getFullYear()
-    
-    // Financial year starts from April (month 4)
-    const getFinancialYear = (date: Date) => {
-      const year = date.getFullYear()
-      const month = date.getMonth() + 1
-      return month >= 4 ? year : year - 1
-    }
-    
-    const currentFinancialYear = getFinancialYear(currentDate)
-    
-    // Count pending months from April to current month
-    let pendingMonths = 0
-    
-    // Check months from April to current month
-    for (let month = 4; month <= currentMonth; month++) {
-      const year = month >= 4 ? currentFinancialYear : currentFinancialYear + 1
-      
-      // Find the monthly fee for this month
-      const monthlyFee = monthlyFees.find(fee => 
-        fee.studentId === student.id && 
-        fee.month === month && 
-        fee.year === year
-      )
-      
-      // If fee exists and is not paid, count as pending
-      if (monthlyFee && monthlyFee.status !== 'PAID') {
-        pendingMonths++
-      }
-    }
-    
-    return pendingMonths
-  }
-
   const fetchFeeDetails = async (studentId: number) => {
     try {
-      // Get the current financial year
       const currentDate = new Date()
       const currentMonth = currentDate.getMonth() + 1
       const currentYear = currentDate.getFullYear()
       const financialYear = currentMonth >= 4 ? currentYear : currentYear - 1
       
       const response = await fetch(`/api/monthly-fees?studentId=${studentId}&year=${financialYear}`)
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
       const result = await response.json()
       if (result.success) {
         const student = students.find(s => s.id === studentId)
         if (student) {
           const monthlyFees = result.data
-          const totalAmount = monthlyFees.reduce((sum: number, fee: MonthlyFee) => sum + Number(fee.totalAmount), 0)
-          const paidAmount = monthlyFees.filter((fee: MonthlyFee) => fee.status === 'PAID').reduce((sum: number, fee: MonthlyFee) => sum + Number(fee.totalAmount), 0)
+          const totalAmount = monthlyFees.reduce((sum: number, fee: MonthlyFee) => sum + Number(fee.totalAmount || 0), 0)
+          const paidAmount = monthlyFees.filter((fee: MonthlyFee) => fee.status === 'PAID').reduce((sum: number, fee: MonthlyFee) => sum + Number(fee.totalAmount || 0), 0)
           const pendingAmount = totalAmount - paidAmount
           const pendingMonths = monthlyFees.filter((fee: MonthlyFee) => fee.status !== 'PAID').length
 
@@ -249,12 +346,15 @@ export default function FeeManagementPage() {
             pendingMonths
           })
         }
+      } else {
+        console.error("Error fetching fee details:", result.error)
       }
     } catch (error) {
       console.error("Error fetching fee details:", error)
     }
   }
 
+  // Event handlers
   const handleStudentClick = async (student: Student) => {
     setSelectedStudent(student)
     await fetchFeeDetails(student.id)
@@ -267,13 +367,14 @@ export default function FeeManagementPage() {
   }
 
   const handleInvoice = async (fee: MonthlyFee) => {
-    // Navigate to the invoice page in the same window
     window.location.href = `/invoice/${fee.id}`
   }
 
   const processPayment = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedMonth) return
+
+    setIsProcessingPayment(true)
 
     try {
       const response = await fetch("/api/monthly-fees", {
@@ -288,23 +389,69 @@ export default function FeeManagementPage() {
         }),
       })
 
-      if (response.ok) {
-        // Refresh fee details
-        if (selectedStudent) {
-          await fetchFeeDetails(selectedStudent.id)
-        }
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to process payment')
+      }
+
+      const result = await response.json()
+      if (result.success) {
         setIsPaymentModalOpen(false)
+        setIsFeeModalOpen(false) // Close fee details modal
         setSelectedMonth(null)
+        setSelectedStudent(null)
+        
+        await Promise.all([
+          fetchStudents(),
+          fetchFees(),
+          fetchAllMonthlyFees()
+        ])
+        
+        setSuccessMessage("Payment processed successfully!")
+        setShowSuccessMessage(true)
+        const timeoutId = setTimeout(() => setShowSuccessMessage(false), 3000)
+        
+        // Cleanup timeout
+        return () => clearTimeout(timeoutId)
+      } else {
+        throw new Error(result.error || 'Failed to process payment')
       }
     } catch (error) {
       console.error("Error processing payment:", error)
+      alert(error instanceof Error ? error.message : "Error processing payment. Please try again.")
+    } finally {
+      setIsProcessingPayment(false)
     }
   }
 
   const handleAddFee = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     
+    // Validate form inputs
+    if (!newFee.studentId || !newFee.amount || !newFee.month || !newFee.year || !newFee.dueDate) {
+      alert("Please fill in all required fields")
+      return
+    }
+    
+    if (newFee.transactionTypes.length === 0) {
+      alert("Please select at least one transaction type")
+      return
+    }
+    
+    const amount = parseFloat(newFee.amount)
+    if (isNaN(amount) || amount <= 0) {
+      alert("Please enter a valid amount")
+      return
+    }
+    
+    setIsAddingFee(true)
+    
     try {
+      const transactionTypesText = newFee.transactionTypes.map(type => getTransactionTypeName(type)).join(", ")
+      const combinedRemarks = newFee.remarks 
+        ? `${transactionTypesText} - ${newFee.remarks}`
+        : transactionTypesText
+
       const response = await fetch("/api/fee-manangement", {
         method: "POST",
         headers: {
@@ -312,51 +459,107 @@ export default function FeeManagementPage() {
         },
         body: JSON.stringify({
           studentId: parseInt(newFee.studentId),
-          amount: parseFloat(newFee.amount),
+          amount: amount,
           dueDate: newFee.dueDate,
           status: "PENDING",
-          remarks: newFee.remarks,
+          remarks: combinedRemarks,
         }),
       })
 
-      if (response.ok) {
-        // Reset form and refresh data
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to add fee record')
+      }
+
+      const result = await response.json()
+      if (result.success) {
         setNewFee({
           studentId: "",
           amount: "",
           month: "",
           year: new Date().getFullYear().toString(),
-          transactionType: "TUITION_FEE",
+          transactionTypes: ["TUITION_FEE"],
           dueDate: "",
           remarks: ""
         })
+        
         setIsAddFeeModalOpen(false)
-        fetchFees()
+        
+        await Promise.all([
+          fetchStudents(),
+          fetchFees(),
+          fetchAllMonthlyFees()
+        ])
+        
+        if (selectedStudent) {
+          await fetchFeeDetails(selectedStudent.id)
+        }
+        
+        setSuccessMessage("Fee record added successfully!")
+        setShowSuccessMessage(true)
+        const timeoutId = setTimeout(() => setShowSuccessMessage(false), 3000)
+        
+        // Cleanup timeout
+        return () => clearTimeout(timeoutId)
+      } else {
+        throw new Error(result.error || 'Failed to add fee record')
       }
     } catch (error) {
       console.error("Error adding fee:", error)
+      alert(error instanceof Error ? error.message : "Error adding fee. Please try again.")
+    } finally {
+      setIsAddingFee(false)
     }
   }
 
-  const filteredStudents = students.filter(student => {
+  // Computed values
+  const getPendingFeesCount = useCallback((student: Student) => {
+    if (!student || !student.id) return 0
+    
+    const currentDate = new Date()
+    const currentMonth = currentDate.getMonth() + 1
+    const currentYear = currentDate.getFullYear()
+    const financialYear = currentMonth >= 4 ? currentYear : currentYear - 1
+    
+    let pendingMonths = 0
+    
+    for (let month = 4; month <= currentMonth; month++) {
+      const year = month >= 4 ? financialYear : financialYear + 1
+      
+      const monthlyFee = monthlyFees.find(fee => 
+        fee.studentId === student.id && 
+        fee.month === month && 
+        fee.year === year
+      )
+      
+      if (monthlyFee && monthlyFee.status !== 'PAID') {
+        pendingMonths++
+      }
+    }
+    
+    return pendingMonths
+  }, [monthlyFees])
+
+  const filteredStudents = useMemo(() => {
+    return students.filter(student => {
     const matchesSearch = student.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          student.fatherName?.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesClass = filterClass === "all" || student.admission?.classEnrolled === filterClass
     return matchesSearch && matchesClass
   })
+  }, [students, searchTerm, filterClass])
 
-  const filteredFees = fees.filter((fee: any) => {
-    // Only show PAID fees in the Fee Records table
-    return fee.status === 'PAID'
-  })
+  const filteredFees = useMemo(() => {
+    return fees.filter((fee: any) => fee.status === 'PAID')
+  }, [fees])
 
-  const getTotalCollection = () => {
+  const getTotalCollection = useCallback(() => {
     return fees
       .filter(fee => fee.status === 'PAID')
-      .reduce((sum, fee) => sum + Number(fee.totalAmount), 0)
-  }
+      .reduce((sum, fee) => sum + Number(fee.totalAmount || 0), 0)
+  }, [fees])
 
-  const getPaidThisMonth = () => {
+  const getPaidThisMonth = useCallback(() => {
     const currentDate = new Date()
     const currentMonth = currentDate.getMonth()
     const currentYear = currentDate.getFullYear()
@@ -364,11 +567,16 @@ export default function FeeManagementPage() {
     return fees
       .filter(fee => {
         if (fee.status !== 'PAID' || !fee.paidDate) return false
+        try {
         const paidDate = new Date(fee.paidDate)
         return paidDate.getMonth() === currentMonth && paidDate.getFullYear() === currentYear
+        } catch (error) {
+          console.error("Error parsing paid date:", fee.paidDate, error)
+          return false
+        }
       })
-      .reduce((sum, fee) => sum + Number(fee.totalAmount), 0)
-  }
+      .reduce((sum, fee) => sum + Number(fee.totalAmount || 0), 0)
+  }, [fees])
 
   if (loading) {
     return (
@@ -382,765 +590,101 @@ export default function FeeManagementPage() {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6 max-w-7xl mx-auto p-3 md:p-4">
+    <ErrorBoundary>
+      <div className="space-y-4 md:space-y-6 max-w-7xl mx-auto p-3 md:p-4">
+        {/* Success Notification */}
+        {showSuccessMessage && (
+          <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-in slide-in-from-right duration-300">
+            <CheckCircle className="h-5 w-5" />
+            <span className="font-medium">{successMessage}</span>
+          </div>
+        )}
+
+        {/* Auto-fill Notification */}
+        {isFormAutoFilled && (
+          <div className="fixed top-4 right-4 z-50 bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-in slide-in-from-right duration-300">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            <span className="font-medium">Form auto-filled with default values</span>
+          </div>
+        )}
+
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Fee Management</h1>
-          <p className="text-muted-foreground text-sm md:text-base">Manage student fees and payments</p>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Fee Management</h1>
+            <p className="text-muted-foreground text-sm md:text-base">Manage student fees and payments</p>
         </div>
-        <Button onClick={() => setIsAddFeeModalOpen(true)} className="flex items-center gap-2 w-full sm:w-auto">
+          <Button onClick={() => setIsAddFeeModalOpen(true)} className="flex items-center gap-2 w-full sm:w-auto">
           <Plus className="h-4 w-4" />
           Add New Fee
         </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        {[
-          {
-            title: "Total Students",
-            icon: <User className="h-5 w-5 text-blue-500" />,
-            value: students.length,
-            subtitle: "Enrolled",
-            color: "blue",
-          },
-          {
-            title: "Pending Fees",
-            icon: <AlertCircle className="h-5 w-5 text-orange-500" />,
-            value: students.filter((s) => getPendingFeesCount(s) > 0).length,
-            subtitle: "With pending fees",
-            color: "orange",
-          },
-          {
-            title: "Paid This Month",
-            icon: <CheckCircle className="h-5 w-5 text-green-500" />,
-            value: `₹${getPaidThisMonth()}`,
-            subtitle: "Collected",
-            color: "green",
-          },
-          {
-            title: "Total Collection",
-            icon: <DollarSign className="h-5 w-5 text-purple-500" />,
-            value: `₹${getTotalCollection()}`,
-            subtitle: "Till now",
-            color: "purple",
-          },
-        ].map((stat, index) => (
-          <div
-            key={index}
-            className={`
-              flex items-center justify-between gap-3 md:gap-4 px-3 md:px-4 py-3 rounded-lg shadow-sm
-              bg-gradient-to-br from-${stat.color}-50 to-white dark:from-${stat.color}-950 dark:to-zinc-900
-              border-l-4 border-${stat.color}-500
-              hover:shadow-md transition-shadow duration-200
-            `}
-          >
-            <div className="flex-1 min-w-0">
-              <h4 className="text-xs md:text-sm font-medium text-muted-foreground truncate">{stat.title}</h4>
-              <div className={`text-base md:text-lg font-semibold text-${stat.color}-700 dark:text-${stat.color}-300 truncate`}>
-                {stat.value}
-              </div>
-              <p className="text-xs text-muted-foreground truncate">{stat.subtitle}</p>
-            </div>
-            <div className="bg-white dark:bg-zinc-800/30 p-1.5 md:p-2 rounded-md shadow-inner flex-shrink-0">
-              {stat.icon}
-            </div>
-          </div>
-        ))}
-      </div>
+        <StatsCards
+          students={students}
+          monthlyFees={monthlyFees}
+          getPendingFeesCount={getPendingFeesCount}
+          getTotalCollection={getTotalCollection}
+          getPaidThisMonth={getPaidThisMonth}
+        />
 
-      <Card>
-        <CardHeader className="space-y-4">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-              <User className="h-5 w-5 text-primary" />
-              Student Fee Status
-            </CardTitle>
-            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
-              {/* Search */}
-              <div className="relative w-full sm:w-56">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="search"
-                  placeholder="Search name or father’s name..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 text-sm"
-                />
-              </div>
-              {/* Filter by Class */}
-              <div className="w-full sm:w-40">
-                <Select value={filterClass} onValueChange={setFilterClass}>
-                  <SelectTrigger className="text-sm">
-                    <SelectValue placeholder="Class" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Classes</SelectItem>
-                    {["Nursery", "LKG", "UKG", "1", "2", "3", "4", "5"].map((cls) => (
-                      <SelectItem key={cls} value={cls}>{cls === "1" ? "Class 1" : cls}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {/* Filter by Status */}
-              <div className="w-full sm:w-40">
-                <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger className="text-sm">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="PAID">Paid</SelectItem>
-                    <SelectItem value="PENDING">Pending</SelectItem>
-                    <SelectItem value="PARTIALLY_PAID">Partially Paid</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent className="p-0">
-          {/* Desktop Table View */}
-          <div className="hidden md:block overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Student Name</TableHead>
-                  <TableHead>Father's Name</TableHead>
-                  <TableHead>Class</TableHead>
-                  <TableHead>Section</TableHead>
-                  <TableHead>Admission Date</TableHead>
-                  <TableHead>Pending Months</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredStudents.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
-                      <div className="text-muted-foreground">
-                        <User className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        <p>No students found</p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredStudents.map((student) => {
-                    const pendingMonths = getPendingFeesCount(student)
-                    return (
-                      <TableRow key={student.id} className="hover:bg-muted/50">
-                        <TableCell>
-                          <button
-                            onClick={() => handleStudentClick(student)}
-                            className="font-medium text-primary hover:underline"
-                          >
-                            {student.studentName}
-                          </button>
-                        </TableCell>
-                        <TableCell>{student.fatherName || "-"}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{student.admission?.classEnrolled || "-"}</Badge>
-                        </TableCell>
-                        <TableCell>{student.admission?.section || "-"}</TableCell>
-                        <TableCell>
-                          {student.admission?.admissionDate
-                            ? new Date(student.admission.admissionDate).toLocaleDateString()
-                            : "-"}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={pendingMonths > 0 ? "destructive" : "secondary"}>
-                            {pendingMonths} months
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={pendingMonths > 0 ? "destructive" : "default"}>
-                            {pendingMonths > 0 ? "Pending" : "Paid"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            size="sm"
-                            onClick={() => handleStudentClick(student)}
-                            className="flex items-center gap-1"
-                          >
-                            <Calendar className="h-3 w-3" />
-                            Details
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </div>
-
-          {/* Mobile Card View */}
-          <div className="md:hidden space-y-3 p-4">
-            {filteredStudents.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="text-muted-foreground">
-                  <User className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>No students found</p>
-                </div>
-              </div>
-            ) : (
-              filteredStudents.map((student) => {
-                const pendingMonths = getPendingFeesCount(student)
-                return (
-                  <div key={student.id} className="border rounded-lg p-4 space-y-3 hover:bg-muted/30 transition-colors">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <button
-                          onClick={() => handleStudentClick(student)}
-                          className="font-medium text-primary hover:underline text-left"
-                        >
-                          {student.studentName}
-                        </button>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Father: {student.fatherName || "N/A"}
-                        </p>
-                      </div>
-                      <div className="flex flex-col items-end gap-2">
-                        <Badge variant={pendingMonths > 0 ? "destructive" : "default"}>
-                          {pendingMonths > 0 ? "Pending" : "Paid"}
-                        </Badge>
-                        <Button
-                          size="sm"
-                          onClick={() => handleStudentClick(student)}
-                          className="flex items-center gap-1"
-                        >
-                          <Calendar className="h-3 w-3" />
-                          Details
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Class:</span>
-                        <Badge variant="outline" className="ml-2">
-                          {student.admission?.classEnrolled || "-"}
-                        </Badge>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Section:</span>
-                        <span className="ml-2">{student.admission?.section || "-"}</span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Admission:</span>
-                        <span className="ml-2">
-                          {student.admission?.admissionDate
-                            ? new Date(student.admission.admissionDate).toLocaleDateString()
-                            : "-"}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Pending:</span>
-                        <Badge variant={pendingMonths > 0 ? "destructive" : "secondary"} className="ml-2">
-                          {pendingMonths} months
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
+        {/* Student Fee Table */}
+        <StudentFeeTable
+          students={students}
+          filteredStudents={filteredStudents}
+          searchTerm={searchTerm}
+          filterClass={filterClass}
+          filterStatus={filterStatus}
+          setSearchTerm={setSearchTerm}
+          setFilterClass={setFilterClass}
+          setFilterStatus={setFilterStatus}
+          getPendingFeesCount={getPendingFeesCount}
+          handleStudentClick={handleStudentClick}
+        />
 
       {/* Fee Records Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
-            Fee Payment Records
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {/* Desktop Table View */}
-          <div className="hidden md:block overflow-x-auto">
-            <Table>
-                              <TableHeader>
-                  <TableRow>
-                    <TableHead>Student</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Month/Year</TableHead>
-                    <TableHead>Due Date</TableHead>
-                    <TableHead>Paid Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Remarks</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-              <TableBody>
-                {filteredFees.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
-                      <div className="text-muted-foreground">
-                        <DollarSign className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        <p>No fee records found</p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredFees.map((fee) => (
-                    <TableRow key={fee.id} className="hover:bg-muted/50">
-                      <TableCell className="font-medium">
-                        {students.find(s => s.id === fee.studentId)?.studentName || `Student ${fee.studentId}`}
-                      </TableCell>
-                      <TableCell>₹{Number(fee.totalAmount)}</TableCell>
-                      <TableCell>
-                        {getMonthName(fee.month)} {fee.year}
-                      </TableCell>
-                      <TableCell>
-                        {new Date(fee.dueDate).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        {fee.paidDate 
-                          ? new Date(fee.paidDate).toLocaleDateString()
-                          : "-"
-                        }
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={
-                            fee.status === 'PAID' ? 'default' : 
-                            fee.status === 'PARTIALLY_PAID' ? 'secondary' : 'destructive'
-                          }
-                        >
-                          {fee.status}
-                        </Badge>
-                      </TableCell>
-                                          <TableCell className="max-w-xs truncate">
-                      {fee.remarks || "-"}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleInvoice(fee)}
-                        className="flex items-center gap-1"
-                      >
-                        <FileText className="h-3 w-3" />
-                        Invoice
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+        <FeeRecordsTable
+          fees={filteredFees}
+          students={students}
+          getMonthName={getMonthName}
+          handleInvoice={handleInvoice}
+        />
 
-          {/* Mobile Card View */}
-          <div className="md:hidden space-y-3 p-4">
-            {filteredFees.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="text-muted-foreground">
-                  <DollarSign className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>No fee records found</p>
-                </div>
-              </div>
-            ) : (
-              filteredFees.map((fee) => (
-                <div key={fee.id} className="border rounded-lg p-4 space-y-3 hover:bg-muted/30 transition-colors">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium">
-                        {students.find(s => s.id === fee.studentId)?.studentName || `Student ${fee.studentId}`}
-                      </h4>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {getMonthName(fee.month)} {fee.year}
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <Badge 
-                        variant={
-                          fee.status === 'PAID' ? 'default' : 
-                          fee.status === 'PARTIALLY_PAID' ? 'secondary' : 'destructive'
-                        }
-                      >
-                        {fee.status}
-                      </Badge>
-                      <div className="text-lg font-semibold text-green-600">
-                        ₹{Number(fee.totalAmount)}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Due Date:</span>
-                      <span className="ml-2">{new Date(fee.dueDate).toLocaleDateString()}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Paid Date:</span>
-                      <span className="ml-2">
-                        {fee.paidDate 
-                          ? new Date(fee.paidDate).toLocaleDateString()
-                          : "-"
-                        }
-                      </span>
-                    </div>
-                    {fee.remarks && (
-                      <div className="col-span-2">
-                        <span className="text-muted-foreground">Remarks:</span>
-                        <span className="ml-2 text-sm">{fee.remarks}</span>
-                      </div>
-                    )}
-                    <div className="col-span-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleInvoice(fee)}
-                        className="flex items-center gap-1 w-full"
-                      >
-                        <FileText className="h-3 w-3" />
-                        View Invoice
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </CardContent>
-      </Card>
+        {/* Modals */}
+        <FeeDetailsModal
+          isOpen={isFeeModalOpen}
+          onClose={() => setIsFeeModalOpen(false)}
+          feeDetails={feeDetails}
+          selectedStudent={selectedStudent}
+          getMonthName={getMonthName}
+          handlePayment={handlePayment}
+          handleInvoice={handleInvoice}
+        />
 
-      {/* Fee Details Modal */}
-      <Dialog open={isFeeModalOpen} onOpenChange={setIsFeeModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] md:w-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-lg md:text-xl">
-              <Calendar className="h-5 w-5" />
-              Fee Details - {selectedStudent?.studentName}
-            </DialogTitle>
-          </DialogHeader>
-          {feeDetails && (
-            <div className="space-y-4 md:space-y-6">
-              {/* Student Info */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 p-3 md:p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border">
-                <div>
-                  <p className="text-sm text-muted-foreground">Class</p>
-                  <p className="font-medium">{feeDetails.student.admission?.classEnrolled}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Section</p>
-                  <p className="font-medium">{feeDetails.student.admission?.section}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Amount</p>
-                  <p className="font-medium text-green-600">₹{feeDetails.totalAmount}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Pending Amount</p>
-                  <p className="font-medium text-red-600">₹{feeDetails.pendingAmount}</p>
-                </div>
-              </div>
+        <PaymentModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          selectedMonth={selectedMonth}
+          isProcessingPayment={isProcessingPayment}
+          processPayment={processPayment}
+          getMonthName={getMonthName}
+        />
 
-              {/* Monthly Fees Table */}
-              <div>
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <DollarSign className="h-4 w-4" />
-                  Monthly Fee Details
-                </h3>
-                
-                {/* Desktop Table View */}
-                <div className="hidden md:block overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Month</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Due Date</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Paid Date</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {feeDetails.monthlyFees.map((fee) => (
-                        <TableRow key={fee.id}>
-                          <TableCell className="font-medium">
-                            {getMonthName(fee.month)} {fee.year}
-                          </TableCell>
-                          <TableCell>₹{fee.totalAmount}</TableCell>
-                          <TableCell>
-                            {new Date(fee.dueDate).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={fee.status === 'PAID' ? "default" : "destructive"}>
-                              {fee.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {fee.paidDate 
-                              ? new Date(fee.paidDate).toLocaleDateString()
-                              : "-"
-                            }
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col gap-1">
-                              {fee.status !== 'PAID' && (
-                                <Button
-                                  size="sm"
-                                  onClick={() => handlePayment(fee)}
-                                  className="flex items-center gap-1"
-                                >
-                                  <CheckCircle className="h-3 w-3" />
-                                  Mark Paid
-                                </Button>
-                              )}
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleInvoice(fee)}
-                                className="flex items-center gap-1"
-                              >
-                                <FileText className="h-3 w-3" />
-                                Invoice
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                {/* Mobile Card View */}
-                <div className="md:hidden space-y-3">
-                  {feeDetails.monthlyFees.map((fee) => (
-                    <div key={fee.id} className="border rounded-lg p-4 space-y-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium">
-                            {getMonthName(fee.month)} {fee.year}
-                          </h4>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Due: {new Date(fee.dueDate).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div className="flex flex-col items-end gap-2">
-                          <Badge variant={fee.status === 'PAID' ? "default" : "destructive"}>
-                            {fee.status}
-                          </Badge>
-                          <div className="text-lg font-semibold text-green-600">
-                            ₹{fee.totalAmount}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">Paid Date:</span>
-                          <span className="ml-2">
-                            {fee.paidDate 
-                              ? new Date(fee.paidDate).toLocaleDateString()
-                              : "-"
-                            }
-                          </span>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          {fee.status !== 'PAID' && (
-                            <Button
-                              size="sm"
-                              onClick={() => handlePayment(fee)}
-                              className="flex items-center gap-1 w-full"
-                            >
-                              <CheckCircle className="h-3 w-3" />
-                              Mark Paid
-                            </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleInvoice(fee)}
-                            className="flex items-center gap-1 w-full"
-                          >
-                            <FileText className="h-3 w-3" />
-                            View Invoice
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Payment Modal */}
-      <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
-        <DialogContent className="w-[95vw] md:w-auto max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-lg md:text-xl">
-              <CheckCircle className="h-5 w-5" />
-              Mark Payment
-            </DialogTitle>
-          </DialogHeader>
-          <form onSubmit={processPayment} className="space-y-4">
-            <div>
-              <Label>Month</Label>
-              <p className="text-sm text-muted-foreground">
-                {selectedMonth ? `${getMonthName(selectedMonth.month)} ${selectedMonth.year}` : ""}
-              </p>
-            </div>
-            <div>
-              <Label>Amount</Label>
-              <p className="text-sm text-muted-foreground">
-                ₹{selectedMonth?.totalAmount}
-              </p>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsPaymentModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4" />
-                Confirm Payment
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Add New Fee Modal */}
-      <Dialog open={isAddFeeModalOpen} onOpenChange={setIsAddFeeModalOpen}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5" />
-              Add New Fee Record
-            </DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleAddFee} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="student">Student</Label>
-                <Select 
-                  value={newFee.studentId} 
-                  onValueChange={(value) => setNewFee({...newFee, studentId: value})}
-                >
-                  <SelectTrigger id="student">
-                    <SelectValue placeholder="Select student" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {students.map((student) => (
-                      <SelectItem key={student.id} value={student.id.toString()}>
-                        {student.studentName} - {student.admission?.classEnrolled}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="amount">Amount (₹)</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  placeholder="Enter amount"
-                  value={newFee.amount}
-                  onChange={(e) => setNewFee({...newFee, amount: e.target.value})}
-                  required
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="month">Month</Label>
-                <Select 
-                  value={newFee.month} 
-                  onValueChange={(value) => setNewFee({...newFee, month: value})}
-                >
-                  <SelectTrigger id="month">
-                    <SelectValue placeholder="Select month" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({length: 12}, (_, i) => i + 1).map((month) => (
-                      <SelectItem key={month} value={month.toString()}>
-                        {getMonthName(month)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="year">Year</Label>
-                <Input
-                  id="year"
-                  type="number"
-                  placeholder="Year"
-                  value={newFee.year}
-                  onChange={(e) => setNewFee({...newFee, year: e.target.value})}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="transactionType">Transaction Type</Label>
-                <Select 
-                  value={newFee.transactionType} 
-                  onValueChange={(value) => setNewFee({...newFee, transactionType: value})}
-                >
-                  <SelectTrigger id="transactionType">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="TUITION_FEE">Tuition Fee</SelectItem>
-                    <SelectItem value="ADMISSION_FEE">Admission Fee</SelectItem>
-                    <SelectItem value="EXAM_FEE">Exam Fee</SelectItem>
-                    <SelectItem value="TRANSPORT_FEE">Transport Fee</SelectItem>
-                    <SelectItem value="OTHER">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="dueDate">Due Date</Label>
-              <Input
-                id="dueDate"
-                type="date"
-                value={newFee.dueDate}
-                onChange={(e) => setNewFee({...newFee, dueDate: e.target.value})}
-                required
+              <AddFeeModal
+        isOpen={isAddFeeModalOpen}
+        onClose={closeAllModals}
+        students={students}
+        newFee={newFee}
+        setNewFee={setNewFee}
+        handleAddFee={handleAddFee}
+        isAddingFee={isAddingFee}
+        getMonthName={getMonthName}
+        getTransactionTypeName={getTransactionTypeName}
+        autoFillForm={autoFillForm}
+        calculateAmount={getDefaultAmount}
               />
             </div>
-
-            <div>
-              <Label htmlFor="remarks">Remarks</Label>
-              <Textarea
-                id="remarks"
-                placeholder="Enter any additional remarks..."
-                value={newFee.remarks}
-                onChange={(e) => setNewFee({...newFee, remarks: e.target.value})}
-                rows={3}
-              />
-            </div>
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsAddFeeModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Add Fee Record
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-
-    </div>
+    </ErrorBoundary>
   )
 } 

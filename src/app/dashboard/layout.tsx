@@ -110,22 +110,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 className="mr-2 data-[orientation=vertical]:h-4 hidden lg:block"
               />
               <div className="flex-1 min-w-0">
-                <Breadcrumb>
-                  <BreadcrumbList>
-                    {breadcrumb.map((item, idx) => (
-                      <React.Fragment key={item.label}>
+              <Breadcrumb>
+                <BreadcrumbList>
+                  {breadcrumb.map((item, idx) => (
+                    <React.Fragment key={item.label}>
                         <BreadcrumbItem className={idx === 0 ? "hidden lg:block" : undefined}>
-                          {item.href ? (
-                            <BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
-                          ) : (
-                            <BreadcrumbPage>{item.label}</BreadcrumbPage>
-                          )}
-                        </BreadcrumbItem>
+                        {item.href ? (
+                          <BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
+                        ) : (
+                          <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                        )}
+                      </BreadcrumbItem>
                         {idx < breadcrumb.length - 1 && <BreadcrumbSeparator className="hidden lg:block" />}
-                      </React.Fragment>
-                    ))}
-                  </BreadcrumbList>
-                </Breadcrumb>
+                    </React.Fragment>
+                  ))}
+                </BreadcrumbList>
+              </Breadcrumb>
                 {/* Mobile page title */}
                 <div className="lg:hidden">
                   <h1 className="text-lg font-semibold truncate">{pageTitle}</h1>

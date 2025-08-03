@@ -3,13 +3,6 @@
 import React, { useState, useEffect } from "react"
 import { Download, Plus, CheckCircle2, XCircle, AlertCircle, Search, Upload, CircleX, CrossIcon } from "lucide-react"
 import { toast } from "sonner"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -47,8 +40,6 @@ const categoryColors = {
   Other: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300"
 }
 
-// Add Expense type
-
 type Expense = {
   id: number;
   title: string;
@@ -58,7 +49,7 @@ type Expense = {
   expenseDate: string;
   createdAt?: string;
   updatedAt?: string;
-  status: string; // Local only
+  status: string; 
 };
 
 function StatCard({ title, value, icon, color, bgColor }: {
@@ -99,7 +90,6 @@ export default function Expenses() {
     date: new Date().toISOString().split('T')[0],
     title: ""
   })
-  const [adding, setAdding] = useState(false)
   const { setBreadcrumb, setPageTitle } = useDashboardNav();
   const [loading, setLoading] = useState(true)
 
@@ -203,7 +193,6 @@ export default function Expenses() {
           date: new Date().toISOString().split('T')[0],
           title: ""
         })
-        setAdding(false)
         showSuccessAlert("Success","Expense added successfully")
       } else {
         toast.error(result.error || "Failed to add expense")
@@ -226,10 +215,6 @@ export default function Expenses() {
             <Button variant="outline" size="sm" onClick={exportToCSV} className="gap-2">
               <Upload className="w-4 h-4" />
               Export
-            </Button>
-            <Button size="sm" onClick={() => setAdding(!adding)} className="gap-2">
-            {adding ? <CircleX className="w-3.5 h-3.5" /> : <CrossIcon className="w-3.5 h-3.5" />}
-              {adding ? "Cancel" : "Add Expense"}
             </Button>
           </div>
         </div>
@@ -267,109 +252,105 @@ export default function Expenses() {
         </div>
       )}
 
-      {/* Add Expense Form */}
-      {adding && (
-        <Card className="shadow-lg py-0 gap-2 border border-gray-200 rounded-xl bg-white">
-          <CardHeader className="px-6 pt-4 pb-0 border-b border-gray-100 bg-gray-50 rounded-t-xl">
-            <CardTitle className="text-2xl font-semibold text-gray-800 flex items-center gap-2">
-              💸 Add New Expense
-            </CardTitle>
-          </CardHeader>
+      <Card className="shadow-lg py-0 gap-2 border border-gray-200 rounded-xl bg-white">
+        <CardHeader className="px-6 pt-4 pb-0 border-b border-gray-100 bg-gray-50 rounded-t-xl">
+          <CardTitle className="text-2xl font-semibold text-gray-800 flex items-center gap-2">
+            💸 Add New Expense
+          </CardTitle>
+        </CardHeader>
 
-          <CardContent className="p-6">
-            <form onSubmit={handleAddExpense} className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+        <CardContent className="p-6">
+          <form onSubmit={handleAddExpense} className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
 
-                {/* Category */}
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category</Label>
-                  <Select
-                    value={form.category}
-                    onValueChange={(value) => setForm({ ...form, category: value })}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Utilities">⚡ Utilities</SelectItem>
-                      <SelectItem value="Supplies">📦 Supplies</SelectItem>
-                      <SelectItem value="Maintenance">🛠️ Maintenance</SelectItem>
-                      <SelectItem value="Salaries">💼 Salaries</SelectItem>
-                      <SelectItem value="Other">📁 Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Description */}
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Input
-                    id="description"
-                    name="description"
-                    placeholder="e.g., Water bill for July"
-                    value={form.description}
-                    onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  />
-                </div>
-
-                {/* Amount */}
-                <div className="space-y-2">
-                  <Label htmlFor="amount">Amount (₹)</Label>
-                  <Input
-                    id="amount"
-                    name="amount"
-                    type="number"
-                    placeholder="Enter amount"
-                    value={form.amount}
-                    onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                  />
-                </div>
-
-                {/* Date */}
-                <div className="space-y-2">
-                  <Label htmlFor="date">Date</Label>
-                  <Input
-                    id="date"
-                    name="date"
-                    type="date"
-                    value={form.date}
-                    onChange={(e) => setForm({ ...form, date: e.target.value })}
-                  />
-                </div>
-
-                {/* Status */}
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Select
-                    value={form.status}
-                    onValueChange={(value) => setForm({ ...form, status: value })}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Paid">✅ Paid</SelectItem>
-                      <SelectItem value="Unpaid">❌ Unpaid</SelectItem>
-                      <SelectItem value="Partial">➗ Partial</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Submit Button */}
-                <div className="flex items-center pt-4">
-                  <Button
-                    type="submit"
-                    className="w-full lg:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-md transition"
-                  >
-                    <IoAddCircle className="text-xl"/> Add Expense
-                  </Button>
-                </div>
+              {/* Category */}
+              <div className="space-y-2">
+                <Label htmlFor="category">Category</Label>
+                <Select
+                  value={form.category}
+                  onValueChange={(value) => setForm({ ...form, category: value })}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Utilities">⚡ Utilities</SelectItem>
+                    <SelectItem value="Supplies">📦 Supplies</SelectItem>
+                    <SelectItem value="Maintenance">🛠️ Maintenance</SelectItem>
+                    <SelectItem value="Salaries">💼 Salaries</SelectItem>
+                    <SelectItem value="Other">📁 Other</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </form>
-          </CardContent>
-        </Card>
 
-      )}
+              {/* Description */}
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Input
+                  id="description"
+                  name="description"
+                  placeholder="e.g., Water bill for July"
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                />
+              </div>
+
+              {/* Amount */}
+              <div className="space-y-2">
+                <Label htmlFor="amount">Amount (₹)</Label>
+                <Input
+                  id="amount"
+                  name="amount"
+                  type="number"
+                  placeholder="Enter amount"
+                  value={form.amount}
+                  onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                />
+              </div>
+
+              {/* Date */}
+              <div className="space-y-2">
+                <Label htmlFor="date">Date</Label>
+                <Input
+                  id="date"
+                  name="date"
+                  type="date"
+                  value={form.date}
+                  onChange={(e) => setForm({ ...form, date: e.target.value })}
+                />
+              </div>
+
+              {/* Status */}
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select
+                  value={form.status}
+                  onValueChange={(value) => setForm({ ...form, status: value })}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Paid">✅ Paid</SelectItem>
+                    <SelectItem value="Unpaid">❌ Unpaid</SelectItem>
+                    <SelectItem value="Partial">➗ Partial</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex items-center pt-4">
+                <Button
+                  type="submit"
+                  className="w-full lg:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-md transition"
+                >
+                  <IoAddCircle className="text-xl"/> Add Expense
+                </Button>
+              </div>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
 
       {/* Expense Records */}
       <Card className="shadow-sm border py-0">

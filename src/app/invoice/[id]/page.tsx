@@ -72,8 +72,8 @@ export default function InvoicePage() {
         const invoice: InvoiceData = {
           logoUrl: "/assets/school_logo.png",
           schoolName: "Kids Life School",
-          address: "123 Education Street, Knowledge City, KC 12345",
-          mobileNumbers: ["+91 98765 43210", "+91 98765 43211"],
+          address: "Near Barhat Block, Laxmipur Jamui (BIHAR) 811313",
+          mobileNumbers: ["+91 86748 14870", "+91 98765 43211"],
           email: "info@kidslifeschool.com",
           receiptDate: feeData.paidDate ? new Date(feeData.paidDate).toLocaleDateString() : new Date().toLocaleDateString(),
           receiptNo: feeData.id,

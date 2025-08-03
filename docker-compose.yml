@@ -3,7 +3,7 @@
 services:
   db:
     image: mysql:8
-    container_name: mysql-school-1
+    container_name: mysql-school
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root
@@ -17,7 +17,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: school-app-1
+    container_name: school-app
     ports:
       - "3000:3000"
     depends_on:

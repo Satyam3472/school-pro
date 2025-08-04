@@ -12,6 +12,8 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import Image from "next/image";
+import Link from "next/link";
 
 
 // School data context
@@ -58,7 +60,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [error, setError] = useState<string | null>(null);
 
   // Use the sidebar close hook for mobile navigation
-  useSidebarClose();
+  useSidebarClose();  
 
   // Fetch school data once when layout mounts
   useEffect(() => {
@@ -79,6 +81,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }
         
         const data = await response.json();
+        console.log("Fetched school data:", data);
         setSchoolData(data);
         setLoading(false);
       } catch (err) {
@@ -109,28 +112,55 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 orientation="vertical"
                 className="mr-2 data-[orientation=vertical]:h-4 hidden lg:block"
               />
-              <div className="flex-1 min-w-0">
-              <Breadcrumb>
-                <BreadcrumbList>
-                  {breadcrumb.map((item, idx) => (
-                    <React.Fragment key={item.label}>
-                        <BreadcrumbItem className={idx === 0 ? "hidden lg:block" : undefined}>
-                        {item.href ? (
-                          <BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
-                        ) : (
-                          <BreadcrumbPage>{item.label}</BreadcrumbPage>
-                        )}
-                      </BreadcrumbItem>
-                        {idx < breadcrumb.length - 1 && <BreadcrumbSeparator className="hidden lg:block" />}
-                    </React.Fragment>
-                  ))}
-                </BreadcrumbList>
-              </Breadcrumb>
-                {/* Mobile page title */}
-                <div className="lg:hidden">
-                  <h1 className="text-lg font-semibold truncate">{pageTitle}</h1>
-                </div>
+              <div className="hidden sm:block flex-1 min-w-0">
+                <Breadcrumb>
+                  <BreadcrumbList>
+                    {breadcrumb.map((item, idx) => (
+                      <React.Fragment key={item.label}>
+                          <BreadcrumbItem className={idx === 0 ? "hidden lg:block" : undefined}>
+                          {item.href ? (
+                            <BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
+                          ) : (
+                            <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                          )}
+                        </BreadcrumbItem>
+                          {idx < breadcrumb.length - 1 && <BreadcrumbSeparator className="hidden lg:block" />}
+                      </React.Fragment>
+                    ))}
+                  </BreadcrumbList>
+                </Breadcrumb>
               </div>
+              <Link href="/" className="w-full">
+                <div className="sm:hidden flex w-full items-center justify-center gap-2">
+                    <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg shadow-sm">
+                      {schoolData?.logoBase64 ? (
+                        <img
+                          src={schoolData?.logoBase64}
+                          alt="School Logo"
+                          className="h-12 w-12 object-contain"
+                          onError={(e) => {
+                            console.error('Logo image failed to load:', e);
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <Image
+                          src="/assets/school_logo.png"
+                          alt="Fallback School Logo"
+                          width={54}
+                          height={54}
+                          className="h-12 w-12 object-contain"
+                        />
+                      )}
+                    </div>
+                    <div className="flex flex-col leading-none">
+                      <span className="font-bold text-lg">{schoolData?.schoolName?.toUpperCase()}</span>
+                      <span className="text-xs text-muted-foreground lg:block">
+                        {schoolData?.slogan}
+                      </span>
+                    </div>
+                </div>
+              </Link>
             </header>
             <main className="min-h-[calc(100vh-4rem)] bg-background/50">{children}</main>
           </div>

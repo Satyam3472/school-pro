@@ -7,7 +7,7 @@ import { SCHOOL_NAME } from "../data/data";
 
 const About = () => {
   return (
-    <section id="about" className="py-20 bg-white text-gray-800 relative">
+    <section id="about" className="py-10 sm:py-20 px-4 bg-white text-gray-800 relative">
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row items-center">
           {/* Text Content */}
@@ -16,9 +16,9 @@ const About = () => {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.7 }}
             viewport={{ once: true }}
-            className="md:w-1/2 mb-10 md:mb-0 md:pr-10"
+            className="w-full md:w-1/2 mb-10 md:mb-0 md:pr-10"
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            <h2 className="text-3xl md:text-4xl font-bold mb-6 text-center sm:text-left">
               About{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-800">
                 {SCHOOL_NAME}

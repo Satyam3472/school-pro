@@ -7,7 +7,7 @@ import { SCHOOL_NAME } from '../data/data';
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-50 text-gray-700 py-16 border-t border-gray-200">
+    <footer className="bg-gray-50 text-gray-700 py-10 px-6 sm:py-16 border-t border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           {/* School Branding */}

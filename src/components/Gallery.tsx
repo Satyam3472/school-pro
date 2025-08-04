@@ -27,13 +27,13 @@ const imageGroups = [
 
 const Gallery = () => {
   return (
-    <section className="px-4 py-16 sm:py-24 sm:px-16 bg-white" id="gallery">
+    <section className="px-4 py-8 sm:py-24 sm:px-16 bg-white" id="gallery">
       <motion.h2
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.6 }}
-        className="text-3xl sm:text-4xl font-extrabold text-center mb-16 text-gray-900 tracking-tight"
+        className="text-3xl sm:text-4xl font-extrabold text-center mb-10 sm:mb-16 text-gray-900 tracking-tight"
       >
         School{" "}
         <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-800">

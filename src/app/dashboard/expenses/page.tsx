@@ -222,13 +222,13 @@ export default function Expenses() {
 
       {/* Stats Cards - Skeleton Loading */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[...Array(4)].map((_, i) => (
             <Skeleton key={i} className="h-24 rounded-lg" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <StatCard 
             title="Total Expenses" 
             value={`₹${totalExpenses.toLocaleString()}`} 

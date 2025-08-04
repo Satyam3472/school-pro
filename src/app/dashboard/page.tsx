@@ -96,7 +96,7 @@ export default function Dashboard() {
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
       {/* Header Stats - Compact Row */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 px-4">
         <Card className="shadow-sm py-2">
           <CardContent className="px-4 py-2">
             <div className="flex items-center justify-between">
@@ -214,7 +214,7 @@ export default function Dashboard() {
           </CardContent>
         </Card> */}
         <Card className="lg:col-span-2 shadow-sm  py-0">
-          <CardContent>
+          <CardContent className="px-0">
             <AdmissionForm />
           </CardContent>
         </Card>
@@ -335,7 +335,7 @@ export default function Dashboard() {
 
       {/* Quick Stats Row */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="shadow-sm">
+        <Card className="shadow-sm py-0">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <Target className="w-4 h-4 text-blue-600" />
@@ -354,7 +354,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm">
+        <Card className="shadow-sm py-0">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="w-4 h-4 text-green-600" />

@@ -8,9 +8,9 @@ import { SCHOOL_NAME } from '../data/data';
 
 const Hero = () => {
   return (
-    <section className="relative bg-white overflow-hidden py-24 md:py-32 lg:py-40">
+    <section className="relative bg-white overflow-hidden py-10 md:py-32 lg:py-40">
       {/* Background Layer */}
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 hidden md:block">
         <Image
           src="/assets/background.png"
           alt="School Campus Background"
@@ -53,7 +53,7 @@ const Hero = () => {
           </motion.p>
 
           <motion.div
-            className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4"
+            className="flex flex-row items-center justify-center lg:justify-start gap-4"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.6, duration: 0.8, ease: "easeOut" }}
@@ -61,7 +61,7 @@ const Hero = () => {
             <motion.button
               whileHover={{ scale: 1.02, boxShadow: "0 8px 20px rgba(59, 130, 246, 0.4)" }}
               whileTap={{ scale: 0.98 }}
-              className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-semibold py-3.5 px-8 rounded-full shadow-lg transition-all duration-300 ease-in-out transform focus:outline-none focus:ring-4 focus:ring-blue-300"
+              className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-semibold py-2 sm:py-3.5 px-4 sm:px-8 rounded-full shadow-lg transition-all duration-300 ease-in-out transform focus:outline-none focus:ring-4 focus:ring-blue-300"
             >
               Learn More <FaArrowRight className="ml-1" />
             </motion.button>
@@ -69,7 +69,7 @@ const Hero = () => {
             <motion.button
               whileHover={{ scale: 1.02, backgroundColor: "#e0f2fe", color: "#2563eb" }}
               whileTap={{ scale: 0.98 }}
-              className="flex items-center gap-2 border-2 border-blue-500 text-blue-600 bg-white font-semibold py-3.5 px-8 rounded-full shadow-md hover:border-blue-600 hover:text-blue-700 transition-all duration-300 ease-in-out transform focus:outline-none focus:ring-4 focus:ring-blue-200"
+              className="flex items-center gap-2 border-2 border-blue-500 text-blue-600 bg-white font-semibold py-2 sm:py-3.5 px-4 sm:px-8 rounded-full shadow-md hover:border-blue-600 hover:text-blue-700 transition-all duration-300 ease-in-out transform focus:outline-none focus:ring-4 focus:ring-blue-200"
             >
               <FaGraduationCap className="mr-1" /> Admissions
             </motion.button>

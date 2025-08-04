@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch school settings
-    const response = await fetch(`${request.nextUrl.origin}/api/settings/${payload.schoolId}`);
+    const response = await fetch(`http://localhost:3000/api/settings/${payload.schoolId}`);
     if (!response.ok) {
       return NextResponse.json({ error: 'Failed to fetch school settings' }, { status: response.status });
     }

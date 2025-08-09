@@ -78,6 +78,15 @@ function StatCard({ title, value, icon, color, bgColor }: {
   )
 }
 
+const formatDate = (dateString:string) => {
+  const dateObj = new Date(dateString);
+  const day = String(dateObj.getDate()).padStart(2, "0");
+  const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+  const year = dateObj.getFullYear();
+
+  return `${day}/${month}/${year}`;
+}
+
 export default function Expenses() {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [filter, setFilter] = useState("All")
@@ -405,7 +414,7 @@ export default function Expenses() {
                 {filteredExpenses.length > 0 ? (
                   filteredExpenses.map((exp) => (
                     <TableRow key={exp.id} className="hover:bg-muted/50">
-                      <TableCell className="font-medium">{exp.expenseDate}</TableCell>
+                      <TableCell className="font-medium">{formatDate(exp.expenseDate)}</TableCell>
                       <TableCell>
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${categoryColors[exp.category as keyof typeof categoryColors] || categoryColors.Other}`}>
                           {exp.category}

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import Image from "next/image";
 import Link from "next/link";
+import CustomBreadcrumb from "@/components/CustomBreadcrumb";
 
 
 // School data context
@@ -105,31 +106,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <AppSidebar />
         <SidebarInset>
           <div className="flex-1">
-            {/* Shared Dashboard Header */}
             <header className="flex h-16 shrink-0 items-center gap-2 px-4 sticky top-0 z-20 bg-background/80 backdrop-blur-sm border-b border-border/40">
               <SidebarTrigger className="-ml-1 lg:hidden" data-sidebar-trigger />
               <Separator
                 orientation="vertical"
                 className="mr-2 data-[orientation=vertical]:h-4 hidden lg:block"
               />
-              <div className="hidden sm:block flex-1 min-w-0">
-                <Breadcrumb>
-                  <BreadcrumbList>
-                    {breadcrumb.map((item, idx) => (
-                      <React.Fragment key={item.label}>
-                          <BreadcrumbItem className={idx === 0 ? "hidden lg:block" : undefined}>
-                          {item.href ? (
-                            <BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
-                          ) : (
-                            <BreadcrumbPage>{item.label}</BreadcrumbPage>
-                          )}
-                        </BreadcrumbItem>
-                          {idx < breadcrumb.length - 1 && <BreadcrumbSeparator className="hidden lg:block" />}
-                      </React.Fragment>
-                    ))}
-                  </BreadcrumbList>
-                </Breadcrumb>
-              </div>
+              <CustomBreadcrumb items={breadcrumb} />
               <Link href="/" className="w-full">
                 <div className="sm:hidden flex w-full items-center justify-center gap-2">
                     <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg shadow-sm">

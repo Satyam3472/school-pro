@@ -9,7 +9,7 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: school_db
     volumes:
-      - mysql_data:/var/lib/mysql
+      - /data/mysql-school:/var/lib/mysql
     ports:
       - "3306:3306"
 
@@ -27,6 +27,3 @@ services:
       SESSION_SECRET: "your-super-secret-session-key-with-at-least-32-characters-long"
       NODE_ENV: "production"
     restart: unless-stopped
-
-volumes:
-  mysql_data:

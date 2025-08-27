@@ -1,37 +1,29 @@
-version: "3.9"
+
 
 services:
-  mysql-school:
-    image: mysql:8.0
+  db:
+    image: mysql:8
     container_name: mysql-school
-    restart: always
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: school_db
-      MYSQL_USER: kidslife
-      MYSQL_PASSWORD: kidslife123
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./backups:/backups   # optional: store backups on host
-    networks:
-      - school-net
+      - /data/mysql-school:/var/lib/mysql
+    ports:
+      - "3306:3306"
 
-  school-app:
-    build: .
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: school-app
-    restart: always
-    environment:
-      DATABASE_URL: "mysql://kidslife:kidslife123@mysql-school:3306/school_db"
     ports:
       - "3000:3000"
     depends_on:
-      - mysql-school
-    networks:
-      - school-net
-
-volumes:
-  mysql_data:
-
-networks:
-  school-net:
-    driver: bridge
+      - db
+    environment:
+      DATABASE_URL: mysql://root:root@db:3306/school_db
+      SESSION_SECRET: "your-super-secret-session-key-with-at-least-32-characters-long"
+      NODE_ENV: "production"
+    restart: unless-stopped

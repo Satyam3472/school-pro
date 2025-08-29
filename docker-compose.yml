@@ -9,7 +9,7 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: school_db
     volumes:
-      - /data/mysql-school:/var/lib/mysql
+      - ~/mysql-school:/var/lib/mysql
     ports:
       - "3306:3306"
 

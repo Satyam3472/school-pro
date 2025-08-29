@@ -49,7 +49,7 @@ type Expense = {
   expenseDate: string;
   createdAt?: string;
   updatedAt?: string;
-  status: string; 
+  status: string;
 };
 
 function StatCard({ title, value, icon, color, bgColor }: {
@@ -78,7 +78,7 @@ function StatCard({ title, value, icon, color, bgColor }: {
   )
 }
 
-const formatDate = (dateString:string) => {
+const formatDate = (dateString: string) => {
   const dateObj = new Date(dateString);
   const day = String(dateObj.getDate()).padStart(2, "0");
   const month = String(dateObj.getMonth() + 1).padStart(2, "0");
@@ -91,10 +91,10 @@ export default function Expenses() {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [filter, setFilter] = useState("All")
   const [search, setSearch] = useState("")
-  const [form, setForm] = useState({ 
-    category: "", 
-    description: "", 
-    amount: "", 
+  const [form, setForm] = useState({
+    category: "",
+    description: "",
+    amount: "",
     status: "Paid",
     date: new Date().toISOString().split('T')[0],
     title: ""
@@ -123,10 +123,10 @@ export default function Expenses() {
             status: "Paid" // Default, since Expense model has no status field
           })));
         } else {
-          showErrorAlert("Error","Failed to fetch expenses");
+          showErrorAlert("Error", "Failed to fetch expenses");
         }
       } catch (err) {
-        showErrorAlert("Error","Error loading expenses");
+        showErrorAlert("Error", "Error loading expenses");
       } finally {
         setLoading(false)
       }
@@ -137,7 +137,7 @@ export default function Expenses() {
   // Filter logic
   const filteredExpenses = expenses.filter(exp => {
     const matchesStatus = filter === "All" || exp.status === filter
-    const matchesSearch = 
+    const matchesSearch =
       (exp.description?.toLowerCase() || "").includes(search.toLowerCase()) ||
       (exp.category?.toLowerCase() || "").includes(search.toLowerCase())
     return matchesStatus && matchesSearch
@@ -151,14 +151,14 @@ export default function Expenses() {
 
   const handleStatusChange = (id: number, newStatus: string) => {
     setExpenses(prev => prev.map(e => (e.id === id ? { ...e, status: newStatus } : e)))
-    showSuccessAlert("Success","Status updated locally (not saved to DB)")
+    showSuccessAlert("Success", "Status updated locally (not saved to DB)")
   }
 
   const exportToCSV = () => {
     const headers = ["Category", "Description", "Amount", "Status", "Date"]
     const csv = [
       headers.join(","),
-      ...filteredExpenses.map(exp => 
+      ...filteredExpenses.map(exp =>
         [exp.category, exp.description, exp.amount, exp.status, exp.expenseDate].join(",")
       )
     ].join("\n")
@@ -171,11 +171,10 @@ export default function Expenses() {
     URL.revokeObjectURL(url)
   }
 
-  // Update handleAddExpense to POST to API
   const handleAddExpense = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.category || !form.description || !form.amount) {
-      showErrorAlert("Error","Please fill all required fields")
+      showErrorAlert("Error", "Please fill all required fields")
       return
     }
 
@@ -194,20 +193,20 @@ export default function Expenses() {
       const result = await res.json()
       if (result.success) {
         setExpenses(prev => [...prev, { ...result.data, status: form.status }])
-        setForm({ 
-          category: "", 
-          description: "", 
-          amount: "", 
+        setForm({
+          category: "",
+          description: "",
+          amount: "",
           status: "Paid",
           date: new Date().toISOString().split('T')[0],
           title: ""
         })
-        showSuccessAlert("Success","Expense added successfully")
+        showSuccessAlert("Success", "Expense added successfully")
       } else {
         toast.error(result.error || "Failed to add expense")
       }
     } catch (err) {
-      showErrorAlert("Error","Error adding expense")
+      showErrorAlert("Error", "Error adding expense")
     }
   }
 
@@ -219,12 +218,6 @@ export default function Expenses() {
           <div>
             <h1 className="text-2xl font-semibold">Expense Management</h1>
             <p className="text-muted-foreground text-sm">Track and analyze school expenditures</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={exportToCSV} className="gap-2">
-              <Upload className="w-4 h-4" />
-              Export
-            </Button>
           </div>
         </div>
       </div>
@@ -238,12 +231,12 @@ export default function Expenses() {
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <StatCard 
-            title="Total Expenses" 
-            value={`₹${totalExpenses.toLocaleString()}`} 
-            icon={<svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} 
-            color="text-gray-600" 
-            bgColor="bg-gray-100" 
+          <StatCard
+            title="Total Expenses"
+            value={`₹${totalExpenses.toLocaleString()}`}
+            icon={<svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+            color="text-gray-600"
+            bgColor="bg-gray-100"
           />
           {Object.entries(statusConfig).map(([status, config]) => {
             const total = expenses.filter(e => e.status === status).reduce((sum, e) => sum + Number(e.amount), 0)
@@ -263,17 +256,26 @@ export default function Expenses() {
 
       <Card className="shadow-lg py-0 gap-2 border border-gray-200 rounded-xl bg-white">
         <CardHeader className="px-6 pt-4 pb-0 border-b border-gray-100 bg-gray-50 rounded-t-xl">
-          <CardTitle className="text-2xl font-semibold text-gray-800 flex items-center gap-2">
+          <CardTitle className="text-2xl font-semibold text-gray-800 flex items-center gap-2 justify-center">
             💸 Add New Expense
           </CardTitle>
         </CardHeader>
 
         <CardContent className="p-6">
-          <form onSubmit={handleAddExpense} className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-
-              {/* Category */}
-              <div className="space-y-2">
+          <form onSubmit={handleAddExpense} className="space-y-2">
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="amount">Amount (₹)</Label>
+                <Input
+                  id="amount"
+                  name="amount"
+                  type="number"
+                  placeholder="Enter amount"
+                  value={form.amount}
+                  onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
                 <Label htmlFor="category">Category</Label>
                 <Select
                   value={form.category}
@@ -291,9 +293,7 @@ export default function Expenses() {
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* Description */}
-              <div className="space-y-2">
+              <div className="space-y-1 col-span-2 sm:col-span-1">
                 <Label htmlFor="description">Description</Label>
                 <Input
                   id="description"
@@ -303,22 +303,7 @@ export default function Expenses() {
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                 />
               </div>
-
-              {/* Amount */}
-              <div className="space-y-2">
-                <Label htmlFor="amount">Amount (₹)</Label>
-                <Input
-                  id="amount"
-                  name="amount"
-                  type="number"
-                  placeholder="Enter amount"
-                  value={form.amount}
-                  onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                />
-              </div>
-
-              {/* Date */}
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="date">Date</Label>
                 <Input
                   id="date"
@@ -328,9 +313,7 @@ export default function Expenses() {
                   onChange={(e) => setForm({ ...form, date: e.target.value })}
                 />
               </div>
-
-              {/* Status */}
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="status">Status</Label>
                 <Select
                   value={form.status}
@@ -346,14 +329,12 @@ export default function Expenses() {
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* Submit Button */}
-              <div className="flex items-center pt-4">
+              <div className="flex items-center pt-3 col-span-2 sm:col-span-1">
                 <Button
                   type="submit"
                   className="w-full lg:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-md transition"
                 >
-                  <IoAddCircle className="text-xl"/> Add Expense
+                  <IoAddCircle className="text-xl" /> Add Expense
                 </Button>
               </div>
             </div>
@@ -362,11 +343,16 @@ export default function Expenses() {
       </Card>
 
       {/* Expense Records */}
-      <Card className="shadow-sm border py-0">
-        <CardHeader className="p-4 border-b">
+      <Card className="shadow-sm border py-0 gap-0">
+        <CardHeader className="p-4">
           <div className="flex flex-col sm:flex-row justify-between gap-4">
-            <CardTitle className="text-lg">Expense Records</CardTitle>
-            <div className="flex flex-col sm:flex-row gap-3">
+            <CardTitle className="text-lg flex justify-between gap-3">Expense Records
+            <Button variant="outline" size="sm" onClick={exportToCSV} className="gap-2 py-1 bg-green-600 text-white">
+                <Upload className="w-4 h-4" />
+                Export
+              </Button>
+            </CardTitle>
+            <div className="flex flex-row sm:flex-row gap-3">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -381,79 +367,119 @@ export default function Expenses() {
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="All">All Statuses</SelectItem>
+                  <SelectItem value="All">All Expenses</SelectItem>
                   <SelectItem value="Paid">Paid</SelectItem>
                   <SelectItem value="Unpaid">Unpaid</SelectItem>
                   <SelectItem value="Partial">Partial</SelectItem>
                 </SelectContent>
               </Select>
+
             </div>
           </div>
         </CardHeader>
-        
+
         <CardContent className="p-0">
           {loading ? (
-            <div className="p-4 space-y-4">
+            <div className="p-4 space-y-2">
               {[...Array(5)].map((_, i) => (
                 <Skeleton key={i} className="h-12 w-full rounded-md" />
               ))}
             </div>
           ) : (
-            <Table>
-              <TableHeader className="bg-muted/50">
-                <TableRow>
-                  <TableHead className="w-[140px]">Date</TableHead>
-                  <TableHead className="w-[160px]">Category</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead className="w-[120px]">Amount</TableHead>
-                  <TableHead className="w-[140px]">Status</TableHead>
-                  <TableHead className="w-[140px] text-right">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredExpenses.length > 0 ? (
-                  filteredExpenses.map((exp) => (
-                    <TableRow key={exp.id} className="hover:bg-muted/50">
-                      <TableCell className="font-medium">{formatDate(exp.expenseDate)}</TableCell>
-                      <TableCell>
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${categoryColors[exp.category as keyof typeof categoryColors] || categoryColors.Other}`}>
-                          {exp.category}
-                        </span>
-                      </TableCell>
-                      <TableCell className="max-w-[240px] truncate">{exp.description}</TableCell>
-                      <TableCell className="font-medium">₹{exp.amount.toLocaleString()}</TableCell>
-                      <TableCell>
-                        <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${statusConfig[exp.status as keyof typeof statusConfig].class}`}>
-                          {statusConfig[exp.status as keyof typeof statusConfig].icon}
-                          {exp.status}
+            <>
+              {/* Table View for larger screens */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader className="bg-muted/50">
+                    <TableRow>
+                      <TableHead className="w-[140px]">Date</TableHead>
+                      <TableHead className="w-[160px]">Category</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead className="w-[120px]">Amount</TableHead>
+                      <TableHead className="w-[140px]">Status</TableHead>
+                      <TableHead className="w-[140px] text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredExpenses.map((exp) => (
+                      <TableRow key={exp.id} className="hover:bg-muted/50">
+                        <TableCell className="font-medium">{formatDate(exp.expenseDate)}</TableCell>
+                        <TableCell>
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${categoryColors[exp.category as keyof typeof categoryColors] || categoryColors.Other}`}>
+                            {exp.category}
+                          </span>
+                        </TableCell>
+                        <TableCell className="max-w-[240px] truncate">{exp.description}</TableCell>
+                        <TableCell className="font-medium">₹{exp.amount.toLocaleString()}</TableCell>
+                        <TableCell>
+                          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${statusConfig[exp.status as keyof typeof statusConfig].class}`}>
+                            {statusConfig[exp.status as keyof typeof statusConfig].icon}
+                            {exp.status}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Select
+                            value={exp.status}
+                            onValueChange={(value) => handleStatusChange(exp.id, value)}
+                          >
+                            <SelectTrigger className="w-[120px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Paid">Paid</SelectItem>
+                              <SelectItem value="Unpaid">Unpaid</SelectItem>
+                              <SelectItem value="Partial">Partial</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Card View for smaller screens */}
+              <div className="md:hidden p-4 space-y-2">
+                {filteredExpenses.map((exp) => (
+                  <Card
+                    key={exp.id}
+                    className="border py-0 border-gray-200 dark:border-white/10 shadow-md hover:shadow-lg transition-shadow rounded-2xl overflow-hidden"
+                  >
+                    <CardContent className="p-5 space-y-4">
+                      {/* Top Row: Date, Category, Status */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-2xl font-bold text-gray-900 dark:text-white tracking-wide">
+                          ₹{exp.amount.toLocaleString()}
                         </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Select
-                          value={exp.status}
-                          onValueChange={(value) => handleStatusChange(exp.id, value)}
+                        <div
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium 
+        ${categoryColors[exp.category as keyof typeof categoryColors] || categoryColors.Other}`}
                         >
-                          <SelectTrigger className="w-[120px]">
-                            <SelectValue />
+                          {exp.category}
+                        </div>
+
+
+                        <Select value={exp.status} onValueChange={(value) => handleStatusChange(exp.id, value)}>
+                          <SelectTrigger className="w-[110px] text-xs font-medium">
+                            <SelectValue placeholder="Update status" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Paid">Paid</SelectItem>
-                            <SelectItem value="Unpaid">Unpaid</SelectItem>
-                            <SelectItem value="Partial">Partial</SelectItem>
+                            <SelectItem value="Paid">✅ Paid</SelectItem>
+                            <SelectItem value="Unpaid">❌ Unpaid</SelectItem>
+                            <SelectItem value="Partial">⚡ Partial</SelectItem>
                           </SelectContent>
                         </Select>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                      No expenses found
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                      </div>
+                      <div className="flex justify-between gap-1">
+                        <div className="font-medium text-gray-800 dark:text-gray-200">{exp.description}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">{formatDate(exp.expenseDate)}</div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                ))}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

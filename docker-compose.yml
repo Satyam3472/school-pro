@@ -9,7 +9,7 @@ services:
       MYSQL_USER: AdminUser
       MYSQL_PASSWORD: AdminUser
     volumes:
-      - ~/mysql-school:/var/lib/mysql
+      - mysql-school:/var/lib/mysql
     ports:
       - "3306:3306"
     healthcheck:

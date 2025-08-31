@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Plus, Trash2 } from 'lucide-react';
 import { useDashboardNav } from '../layout';
 import { showErrorAlert, showSuccessAlert } from '@/utils/customFunction';
+import { useRouter } from 'next/navigation';
 
 const TRANSPORT_FEE_DISTANCES = [
   { key: 'below3', label: 'Below 3 KM' },
@@ -36,7 +37,7 @@ export default function SettingsPage() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
+  const router = useRouter();
   const { setBreadcrumb, setPageTitle } = useDashboardNav();
 
   useEffect(() => {
@@ -164,6 +165,7 @@ export default function SettingsPage() {
       const json = await res.json();
       if (json.success) {
         showSuccessAlert("Success", "Settings saved successfully");
+        router.push("/dashboard/students");
       } else {
         showErrorAlert('Error', json.error || 'Error saving settings');
       }

@@ -9,13 +9,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { useDashboardNav } from '../layout';
 import { showErrorAlert, showSuccessAlert } from '@/utils/customFunction';
 import { useRouter } from 'next/navigation';
-
-const TRANSPORT_FEE_DISTANCES = [
-  { key: 'below3', label: 'Below 3 KM' },
-  { key: 'between3and5', label: '3 - 5 KM' },
-  { key: 'between5and10', label: '5 - 10 KM' },
-  { key: 'above10', label: 'Above 10 KM' },
-];
+import { TRANSPORT_FEE_DISTANCES } from '@/data/data';
 
 export default function SettingsPage() {
   const [formData, setFormData] = useState({
@@ -35,11 +29,12 @@ export default function SettingsPage() {
       above10: '',
     },
   });
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const router = useRouter();
-  const { setBreadcrumb, setPageTitle } = useDashboardNav();
 
+  const { setBreadcrumb, setPageTitle } = useDashboardNav();
   useEffect(() => {
     setBreadcrumb([
       { label: 'Dashboard', href: '/dashboard' },
@@ -48,7 +43,6 @@ export default function SettingsPage() {
     setPageTitle('Settings');
   }, [setBreadcrumb, setPageTitle]);
 
-  // Load existing settings data
   useEffect(() => {
     const loadSettings = async () => {
       try {
@@ -165,7 +159,7 @@ export default function SettingsPage() {
       const json = await res.json();
       if (json.success) {
         showSuccessAlert("Success", "Settings saved successfully");
-        router.push("/dashboard/students");
+        router.push("/dashboard");
       } else {
         showErrorAlert('Error', json.error || 'Error saving settings');
       }
@@ -210,7 +204,6 @@ export default function SettingsPage() {
 
         <CardContent className="p-8">
           <form onSubmit={handleSubmit} className="space-y-8">
-            {/* School Information */}
             <div className="space-y-6">
               <h3 className="text-lg font-medium">School Information</h3>
               <Separator />

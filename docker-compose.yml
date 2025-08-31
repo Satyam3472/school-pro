@@ -6,9 +6,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: school_db
-      MYSQL_USER: AdminUser
-      MYSQL_PASSWORD: AdminUser
     volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
       - mysql-school:/var/lib/mysql
     ports:
       - "3306:3306"
@@ -33,5 +32,6 @@ services:
       SESSION_SECRET: "your-super-secret-session-key-with-at-least-32-characters-long"
       NODE_ENV: "production"
     restart: unless-stopped
+
 volumes:
   mysql-school:

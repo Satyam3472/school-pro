@@ -22,19 +22,19 @@ async function initializeSettings() {
     
     // Sample classes data
     const classes = [
-      { name: 'Nursery', tuitionFee: 5000, admissionFee: 2000 },
-      { name: 'LKG', tuitionFee: 6000, admissionFee: 2500 },
-      { name: 'UKG', tuitionFee: 7000, admissionFee: 3000 },
-      { name: 'Class 1', tuitionFee: 8000, admissionFee: 3500 },
-      { name: 'Class 2', tuitionFee: 8500, admissionFee: 4000 },
-      { name: 'Class 3', tuitionFee: 9000, admissionFee: 4500 },
-      { name: 'Class 4', tuitionFee: 9500, admissionFee: 5000 },
-      { name: 'Class 5', tuitionFee: 10000, admissionFee: 5500 },
-      { name: 'Class 6', tuitionFee: 11000, admissionFee: 6000 },
-      { name: 'Class 7', tuitionFee: 12000, admissionFee: 6500 },
-      { name: 'Class 8', tuitionFee: 13000, admissionFee: 7000 },
-      { name: 'Class 9', tuitionFee: 14000, admissionFee: 7500 },
-      { name: 'Class 10', tuitionFee: 15000, admissionFee: 8000 }
+      { name: 'Nursery', tuitionFee: 400, admissionFee: 1000 },
+      { name: 'LKG', tuitionFee: 400, admissionFee: 1000 },
+      { name: 'UKG', tuitionFee: 400, admissionFee: 1000 },
+      { name: 'Class 1', tuitionFee: 400, admissionFee: 1000 },
+      { name: 'Class 2', tuitionFee: 400, admissionFee: 1000 },
+      { name: 'Class 3', tuitionFee: 400, admissionFee: 1000 },
+      { name: 'Class 4', tuitionFee: 400, admissionFee: 1000 },
+      { name: 'Class 5', tuitionFee: 400, admissionFee: 1000 },
+      { name: 'Class 6', tuitionFee: 400, admissionFee: 1000 },
+      { name: 'Class 7', tuitionFee: 400, admissionFee: 1000 },
+      { name: 'Class 8', tuitionFee: 400, admissionFee: 1000 },
+      { name: 'Class 9', tuitionFee: 400, admissionFee: 1000 },
+      { name: 'Class 10', tuitionFee: 400, admissionFee: 1000 }
     ];
 
     // Create the setting with classes
@@ -43,7 +43,7 @@ async function initializeSettings() {
         schoolName: 'KidsLife School',
         schoolId: 'KidsLifeSchool',
         slogan: 'Nurturing Minds, Building Futures',
-        adminName: 'Principal Smith',
+        adminName: 'Roshan Kumar',
         adminEmail: 'principal@kidslifeschool.com',
         password: 'admin123', // This should be hashed in production
         logoBase64: defaultLogoBase64,
